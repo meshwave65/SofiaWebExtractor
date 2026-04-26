@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SofiaWebExtractor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: #1a1a1a;
+    }
+
+    .tabs button {
+      padding: 8px 12px;
+      cursor: pointer;
+      background: #2a2a2a;
+      border: none;
+      color: white;
+    }
+
+    .tab {
+      display: none;
+      padding: 20px;
+    }
+
+    .active {
+      display: block;
+    }
+
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 250px;
+    }
+
+    button.action {
+      margin-top: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .box {
+      background: #1b1b1b;
+      padding: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="tabs">
+  <button onclick="showTab(1)">Auth</button>
+  <button onclick="showTab(2)">Insert</button>
+  <button onclick="showTab(3)">Tasks</button>
+  <button onclick="showTab(4)">Files</button>
+  <button onclick="showTab(5)">Search</button>
+  <button onclick="showTab(6)">Profile</button>
+</div>
+
+<!-- AUTH -->
+<div id="tab1" class="tab active">
+  <h2>Login</h2>
+  <input id="email" placeholder="email" />
+  <input id="password" type="password" placeholder="password" />
+  <br />
+  <button class="action" onclick="login()">Login</button>
+
+  <p id="user"></p>
+</div>
+
+<!-- INSERT -->
+<div id="tab2" class="tab">
+  <h2>Insert Task</h2>
+
+  <input id="link" placeholder="https://..." />
+  <br />
+  <button class="action" onclick="createTask()">Criar Task</button>
+
+  <p id="insert_status"></p>
+</div>
+
+<!-- TASKS -->
+<div id="tab3" class="tab">
+  <h2>Tasks</h2>
+  <button class="action" onclick="loadTasks()">Refresh</button>
+  <div id="tasks"></div>
+</div>
+
+<!-- FILES -->
+<div id="tab4" class="tab">
+  <h2>Files</h2>
+  <button class="action" onclick="loadFiles()">Load Files</button>
+  <div id="files"></div>
+</div>
+
+<!-- SEARCH -->
+<div id="tab5" class="tab">
+  <h2>Search</h2>
+  <input placeholder="search..." />
+</div>
+
+<!-- PROFILE -->
+<div id="tab6" class="tab">
+  <h2>Profile</h2>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+
+</body>
+</html>
