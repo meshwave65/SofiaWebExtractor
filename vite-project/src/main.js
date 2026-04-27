@@ -2,84 +2,99 @@
 
 import "./styles.css";
 
-let USER = {
-  user_name: "meshwave65",
-  full_name: "Diogenes Duarte Sobral",
-  id: "demo"
-};
-
 let TASKS = [
-  { id: "1", status: "DONE", full_url: "https://chatgpt.com/share/demo1", llm_provider: "chatgpt" },
-  { id: "2", status: "PROCESSING", full_url: "https://manus.im/share/demo2", llm_provider: "manus" },
-  { id: "3", status: "STAGED", full_url: "https://grok.com/share/demo3", llm_provider: "grok" }
+  {
+    id: "1dc03cca-ae3d-431c",
+    status: "DONE",
+    llm_provider: "chatgpt",
+    full_url: "https://chatgpt.com/share/demo1"
+  },
+  {
+    id: "5992971d-a8d3-4421",
+    status: "PROCESSING",
+    llm_provider: "manus",
+    full_url: "https://manus.im/share/demo2"
+  },
+  {
+    id: "722a83e8-62fb-4c91",
+    status: "FAIL",
+    llm_provider: "grok",
+    full_url: "https://grok.com/share/demo3"
+  }
 ];
 
-function showView(name) {
-  document.querySelectorAll(".view").forEach(v => v.style.display = "none");
-  const el = document.getElementById("view-" + name);
+// ======================
+// NAV
+// ======================
+function showTab(n) {
+  document.querySelectorAll(".tab").forEach(t => {
+    t.style.display = "none";
+  });
+
+  const el = document.getElementById("tab" + n);
   if (el) el.style.display = "block";
-  if (name === "tasks") renderTasks();
+
+  if (n === 3) renderTasks();
 }
 
-window.showView = showView;
+window.showTab = showTab;
 
-window.addEventListener("DOMContentLoaded", () => {
-  const label = document.getElementById("userLabel");
-  if (label) label.innerText = USER.full_name;
-
-  showView("tasks");
-});
-
+// ======================
+// TASKS RENDER
+// ======================
 function renderTasks() {
   const el = document.getElementById("tasks");
   if (!el) return;
 
   el.innerHTML = "";
 
+  const icon = {
+    DONE: "✔",
+    PROCESSING: "⚙",
+    STAGED: "⚠",
+    FAIL: "⛔"
+  };
+
+  const color = {
+    DONE: "#2ecc71",
+    PROCESSING: "#3498db",
+    STAGED: "#f39c12",
+    FAIL: "#e74c3c"
+  };
+
   TASKS.forEach(t => {
-    const div = document.createElement("div");
+    const row = document.createElement("div");
+    row.className = "task-row";
 
-    const color =
-      t.status === "DONE" ? "#2ecc71" :
-      t.status === "PROCESSING" ? "#3498db" :
-      t.status === "STAGED" ? "#f39c12" : "#999";
-
-    div.className = "card";
-
-    div.innerHTML = `
-      <div style="display:flex; justify-content:space-between;">
-        <b>#${t.id}</b>
-        <span style="color:${color}">${t.status}</span>
+    row.innerHTML = `
+      <div class="task-check">
+        <input type="checkbox">
       </div>
 
-      <div style="font-size:12px; color:#aaa;">
-        ${t.llm_provider}
+      <div class="task-icon">
+        <span style="color:${color[t.status]}; font-weight:bold;">
+          ${icon[t.status]}
+        </span>
       </div>
 
-      <div style="font-size:11px; color:#4ea1ff; word-break:break-all;">
-        ${t.full_url}
+      <div class="task-content">
+        <div class="task-id">${t.id}</div>
+        <div class="task-llm">${t.llm_provider}</div>
+        <div class="task-url">${t.full_url}</div>
+      </div>
+
+      <div class="task-status" style="background:${color[t.status]}">
+        ${t.status}
       </div>
     `;
 
-    el.appendChild(div);
+    el.appendChild(row);
   });
 }
 
-window.insertTask = function () {
-  const link = document.getElementById("link").value;
-  const agent = document.getElementById("agent").value;
-
-  TASKS.unshift({
-    id: String(Date.now()),
-    status: "STAGED",
-    full_url: link,
-    llm_provider: agent || "manual"
-  });
-
-  renderTasks();
-};
-
-window.clearForm = function () {
-  document.getElementById("link").value = "";
-  document.getElementById("agent").value = "";
-};
+// ======================
+// INIT
+// ======================
+window.addEventListener("DOMContentLoaded", () => {
+  showTab(3);
+});

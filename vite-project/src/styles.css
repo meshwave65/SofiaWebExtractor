@@ -1,102 +1,130 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
   background: #0b0f14;
   color: #e6e6e6;
+  font-family: Arial, sans-serif;
 }
 
-/* TOPBAR */
-.topbar {
+/* ================= NAV ================= */
+.tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 12px 16px;
+  gap: 6px;
+  padding: 10px;
   background: #111826;
   border-bottom: 1px solid #1f2a3a;
 }
 
-/* BRAND */
-.brand-block .title {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.brand-block .version {
-  font-size: 11px;
-  color: #8aa0b5;
-}
-
-/* NAV */
-.nav {
-  display: flex;
-  gap: 8px;
-}
-
-.nav button {
+.tabs button {
   background: #1a2433;
-  border: 1px solid #263447;
   color: #cfd6e4;
-  padding: 6px 10px;
+  border: 1px solid #263447;
+  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
 }
 
-.nav button:hover {
-  background: #24344a;
+/* ================= TAB ================= */
+.tab {
+  display: none;
+  padding: 18px;
 }
 
-/* USER */
-.user-block {
-  text-align: right;
-}
+/* ================= INPUT ================= */
+input, select {
+  width: 100%;
+  padding: 6px 10px;
+  margin: 6px 0;
 
-.user-label {
+  background: #111826;
+  border: 1px solid #263447;
+  color: white;
+
+  border-radius: 5px;
   font-size: 11px;
-  color: #8aa0b5;
 }
 
-.user-name {
-  font-size: 13px;
+/* ================= TASK GRID ================= */
+.task-row {
+  display: grid;
+  grid-template-columns: 28px 28px 1fr 90px;
+  gap: 8px;
+  padding: 10px 8px;
+  border-bottom: 1px solid #1f2a3a;
+  align-items: center;
+}
+
+/* CHECK */
+.task-check {
+  text-align: center;
+}
+
+/* ICON */
+.task-icon {
+  text-align: center;
+  font-size: 14px;
+}
+
+/* CONTENT */
+.task-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.task-id {
+  font-size: 10px;
   font-weight: bold;
 }
 
-/* VIEWS */
-.view {
-  display: none;
-  padding: 20px;
+.task-llm {
+  font-size: 8px;
+  color: #8aa0b5;
 }
 
-/* CARDS */
-.card {
-  background: #111826;
-  border: 1px solid #263447;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
+.task-url {
+  font-size: 8px;
+  color: #4ea1ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* INPUTS */
-input {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  background: #111826;
-  border: 1px solid #263447;
+/* STATUS */
+.task-status {
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+  padding: 6px;
   border-radius: 6px;
   color: white;
 }
 
-button {
-  background: #2b6fff;
-  border: none;
-  padding: 8px 12px;
-  margin-top: 6px;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
+/* ================= FOOTER ================= */
+.footer {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+
+  padding: 12px;
+  border-top: 1px solid #1f2a3a;
+  margin-top: 20px;
 }
 
-button:hover {
-  background: #1f5ae0;
+.footer .logo {
+  width: 60px;
+}
+
+.footer .t10 {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.footer .t8 {
+  font-size: 8px;
+  color: #8aa0b5;
+}
+
+.footer a {
+  color: #4ea1ff;
+  text-decoration: none;
 }
