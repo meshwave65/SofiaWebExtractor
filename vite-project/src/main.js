@@ -3,69 +3,93 @@
 import "./styles.css";
 
 // ======================
-// MOCK USER
+// STATE
 // ======================
 let USER = {
   user_name: "guest",
   full_name: "Guest User"
 };
 
+let SESSION = {
+  logged: false
+};
+
+let CLIENT = {
+  full_name: "",
+  email: "",
+  tel1: "",
+  company: "",
+  role: "",
+  password: ""
+};
+
 // ======================
-// MOCK TASKS
+// MOCK DATA
 // ======================
 let TASKS = [
   {
     id: "1dc03cca-ae3d-431c",
     status: "DONE",
-    llm_provider: "chatgpt",
-    full_url: "https://chatgpt.com/share/demo1"
+    llm: "chatgpt",
+    url: "https://chatgpt.com/share/demo1"
   },
   {
     id: "5992971d-a8d3-4f12",
     status: "PROCESSING",
-    llm_provider: "manus",
-    full_url: "https://manus.im/share/demo2"
+    llm: "manus",
+    url: "https://manus.im/share/demo2"
   },
   {
     id: "722a83e8-62fb-9a11",
     status: "FAIL",
-    llm_provider: "grok",
-    full_url: "https://grok.com/share/demo3"
+    llm: "grok",
+    url: "https://grok.com/share/demo3"
   }
 ];
 
-// ======================
-// MOCK FILES
-// ======================
 let FILES = [
   { type: "dir", name: "agents" },
   { type: "dir", name: "logs" },
-  { type: "dir", name: "exports" },
-  { type: "file", name: "readme.md", content: "# MeshWave System\nMock file content..." },
-  { type: "file", name: "config.json", content: "{ \"mode\": \"dev\" }" }
+  { type: "file", name: "readme.md", content: "MeshWave system file content..." }
 ];
 
 // ======================
-// MOCK ARTIFACTS (SEARCH SYSTEM)
-// ======================
-let ARTIFACTS = [];
-
-// ======================
-// TAB NAVIGATION
+// ROUTER
 // ======================
 function showTab(n) {
-  document.querySelectorAll(".tab").forEach(t => {
-    t.style.display = "none";
-  });
+  document.querySelectorAll(".tab").forEach(t => (t.style.display = "none"));
 
   const el = document.getElementById("tab" + n);
   if (el) el.style.display = "block";
 
   if (n === 3) renderTasks();
   if (n === 4) renderFiles();
-  if (n === 5) mockSearch();
+  if (n === 5) renderSearch();
+  if (n === 6) loadProfile();
+  if (n === 7) loadRegister();
 }
 
+// ======================
+// AUTH
+// ======================
+function loginMock() {
+  SESSION.logged = true;
+
+  USER = {
+    user_name: "meshwave",
+    full_name: "MeshWave Operator"
+  };
+
+  showTab(3);
+}
+
+function openRegister() {
+  showTab(7);
+}
+
+// ======================
+// TASKS (RESTORED GRID)
+// ======================
 function renderTasks() {
   const el = document.getElementById("tasks");
   if (!el) return;
@@ -75,7 +99,7 @@ function renderTasks() {
   const icon = {
     DONE: "✔",
     PROCESSING: "⚙",
-    STAGED: "⚠",
+    STAGED: "🚨",
     FAIL: "⛔"
   };
 
@@ -91,24 +115,21 @@ function renderTasks() {
     row.className = "task-row";
 
     row.innerHTML = `
-      <div><input type="checkbox"></div>
-      <div>${icon[t.status]}</div>
-      <div>
-        <div style="font-size:10px;font-weight:bold;">${t.id}</div>
-        <div style="font-size:9px;color:#8aa0b5;">${t.llm_provider}</div>
-        <div style="font-size:9px;color:#4ea1ff;word-break:break-all;">
-          ${t.full_url}
-        </div>
+      <div class="task-check">
+        <input type="checkbox">
       </div>
-      <div style="
-        background:${color[t.status]};
-        color:#fff;
-        font-size:10px;
-        padding:4px;
-        border-radius:6px;
-        text-align:center;
-        font-weight:bold;
-      ">
+
+      <div class="task-icon">
+        ${icon[t.status]}
+      </div>
+
+      <div class="task-content">
+        <div class="task-id">${t.id}</div>
+        <div class="task-llm">${t.llm}</div>
+        <div class="task-url">${t.url}</div>
+      </div>
+
+      <div class="task-status" style="background:${color[t.status]}">
         ${t.status}
       </div>
     `;
@@ -118,7 +139,7 @@ function renderTasks() {
 }
 
 // ======================
-// FILES
+// FILES (RESTORED)
 // ======================
 function renderFiles() {
   const el = document.getElementById("files");
@@ -133,8 +154,8 @@ function renderFiles() {
     row.className = "file-row";
 
     row.innerHTML = `
-      <div class="file-icon">${f.type === "dir" ? "📁" : "📄"}</div>
-      <div class="file-name">${f.name}</div>
+      <div>${f.type === "dir" ? "📁" : "📄"}</div>
+      <div>${f.name}</div>
     `;
 
     row.onclick = () => {
@@ -148,158 +169,107 @@ function renderFiles() {
 }
 
 // ======================
-// SEARCH ENGINE (MOCK)
+// SEARCH (DUAL PANE RESTORED)
 // ======================
-function mockSearch() {
-  const input = document.getElementById("searchInput");
-  const results = document.getElementById("searchResults");
+function renderSearch() {
+  const left = document.getElementById("searchResults");
+  const right = document.getElementById("searchPreview");
 
-  if (!results) return;
-
-  const query = (input?.value || "").toLowerCase();
+  if (!left) return;
 
   const DB = [
-    { id: "a1", title: "ChatGPT Share", type: "task", content: "AI workflow analysis..." },
-    { id: "a2", title: "Manus Project", type: "task", content: "Automation pipeline design..." },
-    { id: "a3", title: "Grok Analysis", type: "task", content: "Reasoning chain output..." },
-    { id: "a4", title: "MeshWave Docs", type: "doc", content: "System documentation base..." }
+    { id: "a1", title: "ChatGPT Artifact", content: "LLM output..." },
+    { id: "a2", title: "Manus Artifact", content: "workflow data..." },
+    { id: "a3", title: "Grok Artifact", content: "analysis..." }
   ];
 
-  ARTIFACTS = DB.filter(d =>
-    d.title.toLowerCase().includes(query) ||
-    d.content.toLowerCase().includes(query)
-  );
+  left.innerHTML = "";
 
-  results.innerHTML = "";
-
-  ARTIFACTS.forEach(a => {
+  DB.forEach(a => {
     const div = document.createElement("div");
     div.className = "artifact";
 
     div.innerHTML = `
-      <input type="checkbox" class="artifact-check" data-id="${a.id}">
+      <input type="checkbox">
       <div>
-        <div class="artifact-title">${a.title}</div>
-        <div class="artifact-type">${a.type}</div>
+        <div style="font-weight:bold;font-size:11px;">${a.title}</div>
+        <div style="font-size:9px;color:#8aa0b5;">artifact</div>
       </div>
     `;
 
-    div.onclick = (e) => {
-      if (e.target.type === "checkbox") return;
-      document.getElementById("searchPreview").textContent = a.content;
+    div.onclick = () => {
+      right.textContent = a.content;
     };
 
-    results.appendChild(div);
+    left.appendChild(div);
   });
 }
 
 // ======================
-// RESUMIR
+// PROFILE (EXPANDED REAL MODEL)
 // ======================
-function mockSummarize() {
-  const artifact = {
-    id: "resume_" + Date.now(),
-    title: "RESUME ARTIFACT",
-    type: "resume",
-    content: "AI-generated summary of selected artifacts..."
-  };
+function loadProfile() {
+  document.getElementById("p_username").value = USER.user_name;
 
-  ARTIFACTS = [artifact];
-  renderSingleArtifact(artifact);
+  document.getElementById("p_name").value = CLIENT.full_name;
+  document.getElementById("p_email").value = CLIENT.email;
+  document.getElementById("p_tel").value = CLIENT.tel1;
+  document.getElementById("p_company").value = CLIENT.company;
+  document.getElementById("p_role").value = CLIENT.role;
+}
+
+function saveProfile() {
+  CLIENT.full_name = document.getElementById("p_name").value;
+  CLIENT.email = document.getElementById("p_email").value;
+  CLIENT.tel1 = document.getElementById("p_tel").value;
+  CLIENT.company = document.getElementById("p_company").value;
+  CLIENT.role = document.getElementById("p_role").value;
+
+  document.getElementById("profile_msg").innerText = "Profile updated";
 }
 
 // ======================
-// ENRIQUECER
+// REGISTER (LEAN FLOW)
 // ======================
-function mockEnrich() {
-  const artifact = {
-    id: "rich_" + Date.now(),
-    title: "RICH TEXT ARTIFACT",
-    type: "rich",
-    content: "Expanded contextual analysis with external knowledge..."
-  };
+function loadRegister() {
+  ["reg_name","reg_email","reg_tel","reg_pass","reg_pass2"]
+    .forEach(id => (document.getElementById(id).value = ""));
+}
 
-  ARTIFACTS = [artifact];
-  renderSingleArtifact(artifact);
+function registerUser() {
+  const p1 = document.getElementById("reg_pass").value;
+  const p2 = document.getElementById("reg_pass2").value;
+
+  if (p1 !== p2) {
+    document.getElementById("reg_msg").innerText = "Password mismatch";
+    return;
+  }
+
+  CLIENT.full_name = document.getElementById("reg_name").value;
+  CLIENT.email = document.getElementById("reg_email").value;
+  CLIENT.tel1 = document.getElementById("reg_tel").value;
+
+  showTab(6);
 }
 
 // ======================
-// SINGLE ARTIFACT VIEW
-// ======================
-function renderSingleArtifact(a) {
-  const left = document.getElementById("searchResults");
-  const right = document.getElementById("searchPreview");
-
-  if (!left || !right) return;
-
-  left.innerHTML = "";
-
-  const div = document.createElement("div");
-  div.className = "artifact";
-
-  div.innerHTML = `
-    <input type="checkbox" class="artifact-check" data-id="${a.id}">
-    <div>
-      <div class="artifact-title">${a.title}</div>
-      <div class="artifact-type">${a.type}</div>
-    </div>
-  `;
-
-  div.onclick = () => {
-    right.textContent = a.content;
-  };
-
-  left.appendChild(div);
-}
-
-// ======================
-// SELECT ALL
-// ======================
-function toggleSelectAll() {
-  const boxes = document.querySelectorAll(".artifact-check");
-  const master = document.getElementById("selectAll");
-
-  boxes.forEach(b => b.checked = master.checked);
-}
-
-// ======================
-// DOWNLOAD
-// ======================
-function downloadSelected() {
-  const selected = [];
-
-  document.querySelectorAll(".artifact-check:checked").forEach(cb => {
-    const id = cb.dataset.id;
-    const found = ARTIFACTS.find(a => a.id === id);
-    if (found) selected.push(found);
-  });
-
-  const blob = new Blob([JSON.stringify(selected, null, 2)], {
-    type: "application/json"
-  });
-
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "artifacts.json";
-  a.click();
-}
-
-// ======================
-// GLOBAL EXPORTS (IMPORTANT FIX)
+// GLOBAL EXPORT
 // ======================
 window.showTab = showTab;
-window.mockSearch = mockSearch;
-window.mockSummarize = mockSummarize;
-window.mockEnrich = mockEnrich;
-window.toggleSelectAll = toggleSelectAll;
-window.downloadSelected = downloadSelected;
+window.loginMock = loginMock;
+window.openRegister = openRegister;
+
+window.renderTasks = renderTasks;
+window.renderFiles = renderFiles;
+window.renderSearch = renderSearch;
+
+window.loadProfile = loadProfile;
+window.saveProfile = saveProfile;
+
+window.loadRegister = loadRegister;
+window.registerUser = registerUser;
 
 // ======================
-// INIT
-// ======================
 window.addEventListener("DOMContentLoaded", () => {
-  showTab(4);
-  renderFiles();
+  showTab(1);
 });

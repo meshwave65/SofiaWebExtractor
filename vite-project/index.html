@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Sofia Web Extractor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="/src/styles.css">
+  <!-- Vite standard (CSS via JS import no main.js) -->
 </head>
 
 <body>
@@ -23,6 +24,9 @@
   <!-- ================= AUTH ================= -->
   <div class="tab" id="tab1">
     <h2>Auth</h2>
+
+    <button onclick="loginMock()">Login (Mock)</button>
+    <button onclick="openRegister()">Create Account</button>
   </div>
 
   <!-- ================= INSERT ================= -->
@@ -39,82 +43,94 @@
 
   <!-- ================= TASKS ================= -->
   <div class="tab" id="tab3">
-
     <h2>TASKS</h2>
-
-    <div class="filters">
-      <select><option>AGENT</option></select>
-      <select><option>LLM</option></select>
-      <select><option>STATUS</option></select>
-    </div>
-
     <div id="tasks"></div>
-
   </div>
 
   <!-- ================= FILES ================= -->
   <div class="tab" id="tab4">
-
     <h2>FILES</h2>
 
-    <div class="file-container">
+    <div id="files"></div>
+    <div id="filePreview">Select a file...</div>
+  </div>
 
-      <div class="file-list" id="files"></div>
+  <!-- ================= SEARCH ================= -->
+  <div class="tab" id="tab5">
 
-      <div class="file-preview" id="filePreview">
-        Select a file to preview...
+    <h2>SEARCH</h2>
+
+    <div class="search-toolbar">
+      <input id="searchInput" placeholder="Search artifacts..." />
+
+      <button onclick="mockSearch()">Search</button>
+      <button onclick="mockSummarize()">Resumir</button>
+      <button onclick="mockEnrich()">Enriquecer</button>
+    </div>
+
+    <div class="search-actions">
+      <label class="select-all">
+        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+        Select All
+      </label>
+
+      <button onclick="downloadSelected()">Download</button>
+    </div>
+
+    <div class="search-layout">
+
+      <div id="searchResults"></div>
+
+      <div id="searchPreview">
+        Select artifact...
       </div>
 
     </div>
 
   </div>
 
-  <!-- ================= SEARCH ================= -->
-  <div class="tab" id="tab5">
-
-  <h2>SEARCH</h2>
-
-  <!-- TOOLBAR -->
-  <div class="search-toolbar">
-
-    <input id="searchInput" placeholder="Search artifacts..." />
-
-    <button onclick="mockSearch()">Search</button>
-    <button onclick="mockSummarize()">Resumir</button>
-    <button onclick="mockEnrich()">Enriquecer</button>
-
-  </div>
-
-  <!-- SELECT ALL + DOWNLOAD -->
-  <div class="search-actions">
-
-    <label class="select-all">
-      <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" />
-      Select All
-    </label>
-
-    <button onclick="downloadSelected()">Download</button>
-
-  </div>
-
-  <!-- LAYOUT -->
-  <div class="search-layout">
-
-    <!-- LEFT -->
-    <div class="search-left" id="searchResults"></div>
-
-    <!-- RIGHT -->
-    <div class="search-right" id="searchPreview">
-      Select an artifact...
-    </div>
-
-  </div>
-
-</div>
-
   <!-- ================= PROFILE ================= -->
   <div class="tab" id="tab6">
+
     <h2>Profile</h2>
+
+    <div class="profile-grid">
+
+      <input id="p_username" disabled placeholder="username">
+
+      <input id="p_name" placeholder="full name">
+      <input id="p_email" placeholder="email">
+      <input id="p_tel" placeholder="phone">
+
+      <input id="p_company" placeholder="company">
+      <input id="p_role" placeholder="role">
+
+      <input id="p_pass" type="password" placeholder="password">
+
+    </div>
+
+    <button onclick="saveProfile()">Save</button>
+
+    <div id="profile_msg"></div>
+
+  </div>
+
+  <!-- ================= REGISTER ================= -->
+  <div class="tab" id="tab7">
+
+    <h2>Create Account</h2>
+
+    <input id="reg_name" placeholder="Full name">
+    <input id="reg_email" placeholder="Email">
+    <input id="reg_tel" placeholder="Phone">
+
+    <input id="reg_pass" type="password" placeholder="Password">
+    <input id="reg_pass2" type="password" placeholder="Confirm Password">
+
+    <button onclick="registerUser()">Create</button>
+
+    <div id="reg_msg"></div>
+
   </div>
 
   <!-- ================= FOOTER ================= -->
@@ -144,4 +160,5 @@
   <script type="module" src="/src/main.js"></script>
 
 </body>
+
 </html>
