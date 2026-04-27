@@ -1,122 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SofiaWebExtractor</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Sofia Control</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f0f0f;
-      color: #fff;
-    }
+  <link rel="stylesheet" href="/src/style.css">
 
-    .tabs {
-      display: flex;
-      gap: 10px;
-      padding: 10px;
-      background: #1a1a1a;
-    }
-
-    .tabs button {
-      padding: 8px 12px;
-      cursor: pointer;
-      background: #2a2a2a;
-      border: none;
-      color: white;
-    }
-
-    .tab {
-      display: none;
-      padding: 20px;
-    }
-
-    .active {
-      display: block;
-    }
-
-    input, select {
-      padding: 8px;
-      margin: 5px 0;
-      width: 250px;
-    }
-
-    button.action {
-      margin-top: 10px;
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-
-    .box {
-      background: #1b1b1b;
-      padding: 10px;
-      margin-top: 10px;
-    }
-  </style>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+  ">
 </head>
 
 <body>
 
-<!-- NAV -->
-<div class="tabs">
-  <button onclick="showTab(1)">Auth</button>
-  <button onclick="showTab(2)">Insert</button>
-  <button onclick="showTab(3)">Tasks</button>
-  <button onclick="showTab(4)">Files</button>
-  <button onclick="showTab(5)">Search</button>
-  <button onclick="showTab(6)">Profile</button>
-</div>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="brand">Sofia Control</div>
 
-<!-- AUTH -->
-<div id="tab1" class="tab active">
-  <h2>Login</h2>
-  <input id="email" placeholder="email" />
-  <input id="password" type="password" placeholder="password" />
-  <br />
-  <button class="action" onclick="login()">Login</button>
+    <div class="menu">
+      <button onclick="showView('insert')">➕ Insert</button>
+      <button onclick="showView('tasks')">📦 Tasks</button>
+      <button onclick="showView('files')">📁 Files</button>
+      <button onclick="showView('search')">🔎 Search</button>
+      <button onclick="showView('profile')">👤 Profile</button>
+    </div>
 
-  <p id="user"></p>
-</div>
+    <div class="status">🟢 SYSTEM ONLINE</div>
+  </div>
 
-<!-- INSERT -->
-<div id="tab2" class="tab">
-  <h2>Insert Task</h2>
+  <!-- INSERT -->
+  <div id="view-insert" class="view">
+    <h2>Insert Task</h2>
 
-  <input id="link" placeholder="https://..." />
-  <br />
-  <button class="action" onclick="createTask()">Criar Task</button>
+    <input id="link" placeholder="https://...">
 
-  <p id="insert_status"></p>
-</div>
+    <input id="agent_new" placeholder="agent override">
 
-<!-- TASKS -->
-<div id="tab3" class="tab">
-  <h2>Tasks</h2>
-  <button class="action" onclick="loadTasks()">Refresh</button>
-  <div id="tasks"></div>
-</div>
+    <button id="btnInsert">Insert</button>
+    <button id="btnClear">Clear</button>
+  </div>
 
-<!-- FILES -->
-<div id="tab4" class="tab">
-  <h2>Files</h2>
-  <button class="action" onclick="loadFiles()">Load Files</button>
-  <div id="files"></div>
-</div>
+  <!-- TASKS -->
+  <div id="view-tasks" class="view">
+    <h2>Tasks</h2>
+    <div id="tasks"></div>
+  </div>
 
-<!-- SEARCH -->
-<div id="tab5" class="tab">
-  <h2>Search</h2>
-  <input placeholder="search..." />
-</div>
+  <!-- FILES -->
+  <div id="view-files" class="view">
+    <h2>Files</h2>
+    <div id="files"></div>
+  </div>
 
-<!-- PROFILE -->
-<div id="tab6" class="tab">
-  <h2>Profile</h2>
-</div>
+  <!-- SEARCH -->
+  <div id="view-search" class="view">
+    <h2>Search</h2>
+    <input placeholder="search...">
+  </div>
 
-<script type="module" src="/src/main.js"></script>
+  <!-- PROFILE -->
+  <div id="view-profile" class="view">
+    <h2>Profile</h2>
+  </div>
+
+  <!-- ENTRYPOINT CORRETO VITE -->
+  <script type="module" src="/src/main.js"></script>
 
 </body>
 </html>

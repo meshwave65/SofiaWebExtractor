@@ -1,107 +1,113 @@
-import { createClient } from "@supabase/supabase-js";
+"use strict";
 
-// ==========================
-// SUPABASE
-// ==========================
-const supabase = createClient(
-  "https://ufylccbdjfzydbwhpmpp.supabase.co",
-  "YOUR_ANON_KEY"
-);
+// ======================
+// STATE MOCK
+// ======================
+let TASKS = [
+  {
+    id: "1",
+    status: "DONE",
+    full_url: "https://chatgpt.com/share/demo1",
+    llm_provider: "chatgpt"
+  },
+  {
+    id: "2",
+    status: "PROCESSING",
+    full_url: "https://manus.im/share/demo2",
+    llm_provider: "manus"
+  },
+  {
+    id: "3",
+    status: "STAGED",
+    full_url: "https://grok.com/share/demo3",
+    llm_provider: "grok"
+  }
+];
 
-// ==========================
-// STATE
-// ==========================
-let USER = null;
-
-// ==========================
-// TAB SYSTEM
-// ==========================
-window.showTab = (n) => {
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  document.getElementById("tab" + n).classList.add("active");
-};
-
-// ==========================
-// AUTH
-// ==========================
-window.login = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
+// ======================
+// VIEW ROUTER
+// ======================
+window.showView = function (name) {
+  document.querySelectorAll(".view").forEach(v => {
+    v.style.display = "none";
   });
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  const el = document.getElementById("view-" + name);
+  if (el) el.style.display = "block";
 
-  USER = data.user;
-
-  document.getElementById("user").innerText =
-    "Logado: " + USER.email;
+  if (name === "tasks") renderTasks();
+  if (name === "files") renderFiles();
 };
 
-// ==========================
-// CREATE TASK
-// ==========================
-window.createTask = async () => {
-  const link = document.getElementById("link").value;
-
-  const { data, error } = await supabase
-    .from("appsofia_tasks")
-    .insert([{
-      user_name: USER.email,
-      full_url: link,
-      status: "STAGED"
-    }]);
-
-  if (error) {
-    document.getElementById("insert_status").innerText =
-      "Erro: " + error.message;
-    return;
-  }
-
-  document.getElementById("insert_status").innerText =
-    "Task criada!";
-};
-
-// ==========================
-// LOAD TASKS
-// ==========================
-window.loadTasks = async () => {
-  const { data, error } = await supabase
-    .from("appsofia_tasks")
-    .select("*")
-    .order("id", { ascending: false });
-
+// ======================
+// TASKS
+// ======================
+function renderTasks() {
   const el = document.getElementById("tasks");
   el.innerHTML = "";
 
-  if (error) {
-    el.innerText = error.message;
-    return;
-  }
-
-  data.forEach(t => {
+  TASKS.forEach(t => {
     const div = document.createElement("div");
-    div.className = "box";
+
+    div.className = "card";
 
     div.innerHTML = `
-      <b>${t.status}</b><br/>
-      ${t.full_url || ""}
+      <b>#${t.id}</b>
+      <div>${t.status}</div>
+      <div style="font-size:12px;color:#888">${t.llm_provider}</div>
+      <div style="font-size:11px;color:#4ea1ff;word-break:break-all">
+        ${t.full_url}
+      </div>
     `;
 
     el.appendChild(div);
   });
-};
+}
 
-// ==========================
-// FILES (stub inicial)
-// ==========================
-window.loadFiles = async () => {
+// ======================
+// INSERT TASK
+// ======================
+function insertTask() {
+  const link = document.getElementById("link").value;
+  const agent = document.getElementById("agent_new").value;
+
+  if (!link) return;
+
+  TASKS.unshift({
+    id: String(Date.now()),
+    status: "STAGED",
+    full_url: link,
+    llm_provider: agent || "unknown"
+  });
+
+  renderTasks();
+}
+
+// ======================
+// CLEAR
+// ======================
+function clearForm() {
+  document.getElementById("link").value = "";
+  document.getElementById("agent_new").value = "";
+}
+
+// ======================
+// FILES (UI ONLY)
+// ======================
+function renderFiles() {
   const el = document.getElementById("files");
-  el.innerHTML = "Files UI pronta (integração Locaweb depois)";
-};
+  el.innerHTML = `
+    <div class="card">📁 File system placeholder</div>
+  `;
+}
+
+// ======================
+// INIT
+// ======================
+window.addEventListener("DOMContentLoaded", () => {
+  renderTasks();
+  showView("tasks");
+
+  document.getElementById("btnInsert").onclick = insertTask;
+  document.getElementById("btnClear").onclick = clearForm;
+});
