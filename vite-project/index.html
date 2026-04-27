@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <title>Sofia Web Extractor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 
 <body>
 
+  <!-- ================= NAV ================= -->
   <div class="tabs">
     <button onclick="showTab(1)">Auth</button>
     <button onclick="showTab(2)">Insert</button>
@@ -18,32 +20,66 @@
     <button onclick="showTab(6)">Profile</button>
   </div>
 
+  <!-- ================= AUTH ================= -->
   <div class="tab" id="tab1">
     <h2>Auth</h2>
   </div>
 
+  <!-- ================= INSERT ================= -->
   <div class="tab" id="tab2">
     <h2>Insert</h2>
+
+    <select></select>
+    <input placeholder="agent override">
+    <input placeholder="https://...">
+
+    <button>Clear</button>
+    <button>Insert</button>
   </div>
 
+  <!-- ================= TASKS ================= -->
   <div class="tab" id="tab3">
+
     <h2>TASKS</h2>
+
+    <div class="filters">
+      <select><option>AGENT</option></select>
+      <select><option>LLM</option></select>
+      <select><option>STATUS</option></select>
+    </div>
+
     <div id="tasks"></div>
+
   </div>
 
+  <!-- ================= FILES ================= -->
   <div class="tab" id="tab4">
-    <h2>Files</h2>
+
+    <h2>FILES</h2>
+
+    <div class="file-container">
+
+      <div class="file-list" id="files"></div>
+
+      <div class="file-preview" id="filePreview">
+        Select a file to preview...
+      </div>
+
+    </div>
+
   </div>
 
+  <!-- ================= SEARCH ================= -->
   <div class="tab" id="tab5">
     <h2>Search</h2>
   </div>
 
+  <!-- ================= PROFILE ================= -->
   <div class="tab" id="tab6">
     <h2>Profile</h2>
   </div>
 
-  <!-- FOOTER -->
+  <!-- ================= FOOTER ================= -->
   <footer class="footer">
 
     <img class="logo"
@@ -52,11 +88,14 @@
 
     <div>
       <div class="t10">MeshWave Cyber Technologies ®</div>
+
       <div class="t8">
         Centro Empresarial Mourisco<br>
         Praia de Botafogo, 501 - 2º andar - Torre Rio Sul<br>
-        <a href="https://www.mshwave.com.br">site</a> |
-        <a href="mailto:info@meshwave.com.br">email</a><br>
+
+        <a href="https://www.mshwave.com.br">www.mshwave.com.br</a> |
+        <a href="mailto:info@meshwave.com.br">info@meshwave.com.br</a><br>
+
         <a href="https://wa.me/351914845439">WhatsApp PT</a> |
         <a href="https://wa.me/5521972341965">WhatsApp BR</a>
       </div>

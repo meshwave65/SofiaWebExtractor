@@ -29,7 +29,7 @@ body {
   padding: 18px;
 }
 
-/* ================= INPUT ================= */
+/* ================= INPUTS ================= */
 input, select {
   width: 100%;
   padding: 6px 10px;
@@ -43,6 +43,13 @@ input, select {
   font-size: 11px;
 }
 
+/* ================= FILTERS ================= */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+
 /* ================= TASK GRID ================= */
 .task-row {
   display: grid;
@@ -53,50 +60,51 @@ input, select {
   align-items: center;
 }
 
-/* CHECK */
-.task-check {
-  text-align: center;
+/* ================= FILES ================= */
+.file-container {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
 }
 
-/* ICON */
-.task-icon {
-  text-align: center;
-  font-size: 14px;
-}
-
-/* CONTENT */
-.task-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.task-id {
-  font-size: 10px;
-  font-weight: bold;
-}
-
-.task-llm {
-  font-size: 8px;
-  color: #8aa0b5;
-}
-
-.task-url {
-  font-size: 8px;
-  color: #4ea1ff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* STATUS */
-.task-status {
-  font-size: 10px;
-  font-weight: bold;
-  text-align: center;
-  padding: 6px;
+.file-list {
+  border: 1px solid #1f2a3a;
+  background: #0f1622;
   border-radius: 6px;
-  color: white;
+  overflow: hidden;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  padding: 8px;
+  border-bottom: 1px solid #1f2a3a;
+  cursor: pointer;
+}
+
+.file-row:hover {
+  background: #162235;
+}
+
+.file-icon {
+  text-align: center;
+}
+
+.file-name {
+  font-size: 11px;
+  color: #cfd6e4;
+}
+
+/* PREVIEW */
+.file-preview {
+  border: 1px solid #1f2a3a;
+  background: #0b0f14;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  color: #9fb3c8;
+  min-height: 300px;
 }
 
 /* ================= FOOTER ================= */

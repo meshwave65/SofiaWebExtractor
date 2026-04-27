@@ -2,25 +2,39 @@
 
 import "./styles.css";
 
+// ======================
+// MOCK TASKS
+// ======================
 let TASKS = [
   {
-    id: "1dc03cca-ae3d-431c",
+    id: "1dc03cca-ae3d",
     status: "DONE",
     llm_provider: "chatgpt",
     full_url: "https://chatgpt.com/share/demo1"
   },
   {
-    id: "5992971d-a8d3-4421",
+    id: "5992971d-a8d3",
     status: "PROCESSING",
     llm_provider: "manus",
     full_url: "https://manus.im/share/demo2"
   },
   {
-    id: "722a83e8-62fb-4c91",
+    id: "722a83e8-62fb",
     status: "FAIL",
     llm_provider: "grok",
     full_url: "https://grok.com/share/demo3"
   }
+];
+
+// ======================
+// MOCK FILES
+// ======================
+let FILES = [
+  { type: "dir", name: "agents" },
+  { type: "dir", name: "logs" },
+  { type: "dir", name: "exports" },
+  { type: "file", name: "readme.md", content: "# MeshWave\nSystem file mock..." },
+  { type: "file", name: "config.json", content: "{ \"mode\": \"dev\" }" }
 ];
 
 // ======================
@@ -35,12 +49,13 @@ function showTab(n) {
   if (el) el.style.display = "block";
 
   if (n === 3) renderTasks();
+  if (n === 4) renderFiles();
 }
 
 window.showTab = showTab;
 
 // ======================
-// TASKS RENDER
+// TASKS
 // ======================
 function renderTasks() {
   const el = document.getElementById("tasks");
@@ -67,23 +82,14 @@ function renderTasks() {
     row.className = "task-row";
 
     row.innerHTML = `
-      <div class="task-check">
-        <input type="checkbox">
+      <div><input type="checkbox"></div>
+      <div>${icon[t.status]}</div>
+      <div>
+        <div>${t.id}</div>
+        <div>${t.llm_provider}</div>
+        <div>${t.full_url}</div>
       </div>
-
-      <div class="task-icon">
-        <span style="color:${color[t.status]}; font-weight:bold;">
-          ${icon[t.status]}
-        </span>
-      </div>
-
-      <div class="task-content">
-        <div class="task-id">${t.id}</div>
-        <div class="task-llm">${t.llm_provider}</div>
-        <div class="task-url">${t.full_url}</div>
-      </div>
-
-      <div class="task-status" style="background:${color[t.status]}">
+      <div style="background:${color[t.status]};color:#fff;padding:4px;border-radius:6px;font-size:10px;text-align:center;">
         ${t.status}
       </div>
     `;
@@ -93,8 +99,36 @@ function renderTasks() {
 }
 
 // ======================
+// FILES
+// ======================
+function renderFiles() {
+  const el = document.getElementById("files");
+  const preview = document.getElementById("filePreview");
+
+  el.innerHTML = "";
+
+  FILES.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "file-row";
+
+    row.innerHTML = `
+      <div class="file-icon">${f.type === "dir" ? "📁" : "📄"}</div>
+      <div class="file-name">${f.name}</div>
+    `;
+
+    row.onclick = () => {
+      if (f.type === "file") {
+        preview.textContent = f.content;
+      }
+    };
+
+    el.appendChild(row);
+  });
+}
+
+// ======================
 // INIT
 // ======================
 window.addEventListener("DOMContentLoaded", () => {
-  showTab(3);
+  showTab(4); // abre FILES direto pra validar UI
 });
