@@ -1,25 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sofia Control</title>
+  <meta charset="UTF-8" />
+  <title>Sofia Web Extractor</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="/src/style.css">
-
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src 'self' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
-  ">
 </head>
 
 <body>
 
-  <!-- TOP BAR -->
+  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="brand">Sofia Control</div>
 
-    <div class="menu">
+    <!-- LEFT -->
+    <div class="brand-block">
+      <div class="title">Sofia Web Extractor</div>
+      <div class="version">Versão 1.0</div>
+    </div>
+
+    <!-- CENTER (NAV BUTTONS) -->
+    <div class="nav">
       <button onclick="showView('insert')">➕ Insert</button>
       <button onclick="showView('tasks')">📦 Tasks</button>
       <button onclick="showView('files')">📁 Files</button>
@@ -27,46 +29,45 @@
       <button onclick="showView('profile')">👤 Profile</button>
     </div>
 
-    <div class="status">🟢 SYSTEM ONLINE</div>
+    <!-- RIGHT -->
+    <div class="user-block">
+      <div class="user-label">Logado como:</div>
+      <div id="userLabel" class="user-name">-</div>
+    </div>
+
   </div>
 
-  <!-- INSERT -->
-  <div id="view-insert" class="view">
+  <!-- VIEWS -->
+
+  <div class="view" id="view-insert">
     <h2>Insert Task</h2>
 
-    <input id="link" placeholder="https://...">
+    <input id="link" placeholder="https://..." />
+    <input id="agent" placeholder="agent override" />
 
-    <input id="agent_new" placeholder="agent override">
-
-    <button id="btnInsert">Insert</button>
-    <button id="btnClear">Clear</button>
+    <button onclick="insertTask()">Insert</button>
+    <button onclick="clearForm()">Clear</button>
   </div>
 
-  <!-- TASKS -->
-  <div id="view-tasks" class="view">
+  <div class="view" id="view-tasks">
     <h2>Tasks</h2>
     <div id="tasks"></div>
   </div>
 
-  <!-- FILES -->
-  <div id="view-files" class="view">
+  <div class="view" id="view-files">
     <h2>Files</h2>
-    <div id="files"></div>
+    <div id="files">Loading...</div>
   </div>
 
-  <!-- SEARCH -->
-  <div id="view-search" class="view">
+  <div class="view" id="view-search">
     <h2>Search</h2>
-    <input placeholder="search...">
+    <input placeholder="search..." />
   </div>
 
-  <!-- PROFILE -->
-  <div id="view-profile" class="view">
+  <div class="view" id="view-profile">
     <h2>Profile</h2>
   </div>
 
-  <!-- ENTRYPOINT CORRETO VITE -->
   <script type="module" src="/src/main.js"></script>
-
 </body>
 </html>
