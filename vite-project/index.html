@@ -71,8 +71,46 @@
 
   <!-- ================= SEARCH ================= -->
   <div class="tab" id="tab5">
-    <h2>Search</h2>
+
+  <h2>SEARCH</h2>
+
+  <!-- TOOLBAR -->
+  <div class="search-toolbar">
+
+    <input id="searchInput" placeholder="Search artifacts..." />
+
+    <button onclick="mockSearch()">Search</button>
+    <button onclick="mockSummarize()">Resumir</button>
+    <button onclick="mockEnrich()">Enriquecer</button>
+
   </div>
+
+  <!-- SELECT ALL + DOWNLOAD -->
+  <div class="search-actions">
+
+    <label class="select-all">
+      <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" />
+      Select All
+    </label>
+
+    <button onclick="downloadSelected()">Download</button>
+
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="search-layout">
+
+    <!-- LEFT -->
+    <div class="search-left" id="searchResults"></div>
+
+    <!-- RIGHT -->
+    <div class="search-right" id="searchPreview">
+      Select an artifact...
+    </div>
+
+  </div>
+
+</div>
 
   <!-- ================= PROFILE ================= -->
   <div class="tab" id="tab6">
