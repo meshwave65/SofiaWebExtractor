@@ -5,8 +5,6 @@
   <meta charset="UTF-8" />
   <title>Sofia Web Extractor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Vite standard (CSS via JS import no main.js) -->
 </head>
 
 <body>
@@ -25,7 +23,13 @@
   <div class="tab" id="tab1">
     <h2>Auth</h2>
 
-    <button onclick="loginMock()">Login (Mock)</button>
+    <label>User / Email</label>
+    <input id="login_email" placeholder="user_name ou email">
+
+    <label>Password</label>
+    <input id="login_pass" type="password" placeholder="password">
+
+    <button onclick="loginMock()">Login</button>
     <button onclick="openRegister()">Create Account</button>
   </div>
 
@@ -47,34 +51,33 @@
     <div id="tasks"></div>
   </div>
 
- <!-- ================= FILES ================= -->
-<div class="tab" id="tab4">
-  <h2>FILES</h2>
+  <!-- ================= FILES ================= -->
+  <div class="tab" id="tab4">
+    <h2>FILES</h2>
 
-  <div class="search-layout">
+    <div class="search-layout">
 
-    <!-- LEFT PANEL -->
-    <div id="files" style="
-      border: 1px solid #1f2a3a;
-      background: #0e141d;
-      overflow-y: auto;
-      padding: 6px;
-    "></div>
+      <div id="files" style="
+        border: 1px solid #1f2a3a;
+        background: #0e141d;
+        overflow-y: auto;
+        padding: 6px;
+      "></div>
 
-    <!-- RIGHT PANEL -->
-    <div id="filePreview" style="
-      border: 1px solid #1f2a3a;
-      background: #0b0f14;
-      padding: 10px;
-      font-size: 9px;
-      line-height: 1.4;
-      overflow-y: auto;
-    ">
-      Select a file...
+      <div id="filePreview" style="
+        border: 1px solid #1f2a3a;
+        background: #0b0f14;
+        padding: 10px;
+        font-size: 9px;
+        line-height: 1.4;
+        overflow-y: auto;
+      ">
+        Select a file...
+      </div>
+
     </div>
-
   </div>
-</div>
+
   <!-- ================= SEARCH ================= -->
   <div class="tab" id="tab5">
 
@@ -180,5 +183,4 @@
   <script type="module" src="/src/main.js"></script>
 
 </body>
-
 </html>
