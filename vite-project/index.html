@@ -3,7 +3,6 @@
 
 <head>
   <meta charset="UTF-8" />
-<!--  <title>Sofia Web Extractor</title> -->
   <title>TESTE DEPLOY RENDER</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -48,8 +47,105 @@
 
   <!-- ================= TASKS ================= -->
   <div class="tab" id="tab3">
-    <h2>TASKS</h2>
-    <div id="tasks"></div>
+
+    <!-- HEADER -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">TASKS</h2>
+      <div style="font-size:12px; color:#8aa0b5;">
+        User: <b id="taskUserName">...</b>
+      </div>
+    </div>
+
+    <!-- CONTROLS (LINHA ÚNICA) -->
+    <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
+
+      <!-- FILTERS -->
+      <select style="width:140px;">
+        <option>All Agents</option>
+      </select>
+
+      <select style="width:140px;">
+        <option>All LLM</option>
+      </select>
+
+      <select style="width:140px;">
+        <option>All Status</option>
+      </select>
+
+      <!-- ACTIONS -->
+      <div style="margin-left:auto; display:flex; gap:6px;">
+
+        <button style="width:36px; background:#2f7d32; color:white;">▶</button>
+        <button style="width:36px; background:#666; color:white;">⏸</button>
+        <button style="width:36px; background:#b83232; color:white;">■</button>
+
+      </div>
+
+    </div>
+
+    <!-- HEADER ROW -->
+    <div class="task-row" style="margin-top:15px;">
+      <div class="task-check">
+        <input type="checkbox">
+      </div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+
+    <!-- MOCK ROWS -->
+    <div id="tasks">
+
+      <div class="task-row">
+        <div class="task-check">
+          <input type="checkbox">
+        </div>
+
+        <div class="task-icon" style="font-size:14px;">⚙</div>
+
+        <div class="task-content">
+          <div class="task-id" style="font-size:12px;">uuid-123456</div>
+          <div class="task-llm" style="font-size:10px;">openai</div>
+          <div class="task-url" style="font-size:10px;">https://example.com/page</div>
+        </div>
+
+        <div class="task-status" style="background:#444; font-size:10px;">PROCESS</div>
+      </div>
+
+      <div class="task-row">
+        <div class="task-check">
+          <input type="checkbox">
+        </div>
+
+        <div class="task-icon" style="font-size:14px;">✔</div>
+
+        <div class="task-content">
+          <div class="task-id" style="font-size:12px;">uuid-987654</div>
+          <div class="task-llm" style="font-size:10px;">anthropic</div>
+          <div class="task-url" style="font-size:10px;">https://example.com/other</div>
+        </div>
+
+        <div class="task-status" style="background:#2f7d32; font-size:10px;">DONE</div>
+      </div>
+
+      <div class="task-row">
+        <div class="task-check">
+          <input type="checkbox">
+        </div>
+
+        <div class="task-icon" style="font-size:14px;">⏸</div>
+
+        <div class="task-content">
+          <div class="task-id" style="font-size:12px;">uuid-555555</div>
+          <div class="task-llm" style="font-size:10px;">gemini</div>
+          <div class="task-url" style="font-size:10px;">https://example.com/test</div>
+        </div>
+
+        <div class="task-status" style="background:#7d6b2f; font-size:10px;">PAUSED</div>
+      </div>
+
+    </div>
+
   </div>
 
   <!-- ================= FILES ================= -->
@@ -171,7 +267,7 @@
         Centro Empresarial Mourisco<br>
         Praia de Botafogo, 501 - 2º andar - Torre Rio Sul<br>
 
-        <a href="https://www.mshwave.com.br">www.mshwave.com.br</a> |
+        <a href="https://www.mEshwave.com.br">www.mshwave.com.br</a> |
         <a href="mailto:info@meshwave.com.br">info@meshwave.com.br</a><br>
 
         <a href="https://wa.me/351914845439">WhatsApp PT</a> |

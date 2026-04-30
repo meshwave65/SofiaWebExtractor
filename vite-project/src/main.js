@@ -17,36 +17,7 @@ let SESSION = {
   logged: false
 };
 
-let CLIENT = {
-  client_uuid: null,
-  user_name: "",
-  full_name: "",
-  email: "",
-  tel1: "",
-  password: ""
-};
-
-// ======================
-// TASK STATE
-// ======================
 let TASKS = [];
-let FILES = [];
-let ARTIFACTS = [];
-
-// ======================
-// SLUG EXTRACTION
-// ======================
-function extractSlugFromUrl(url) {
-  if (!url) return null;
-
-  try {
-    const clean = url.split("?")[0].split("#")[0];
-    const parts = clean.split("/").filter(Boolean);
-    return parts[parts.length - 1] || null;
-  } catch {
-    return null;
-  }
-}
 
 // ======================
 // TAB SYSTEM
@@ -58,37 +29,149 @@ function showTab(n) {
 }
 
 // ======================
-// STEP 1 — FIND CLIENT
+// FETCH TASKS
 // ======================
-async function fetchClient(identifier) {
-  const isEmail = identifier.includes("@");
+async function loadTasks() {
+  if (!USER.user_name) return;
 
-  let query = supabase.from("clients").select("*");
+  const { data, error } = await supabase
+    .from("appsofia_tasks")
+    .select("*")
+    .eq("user_name", USER.user_name)
+    .order("created_at", { ascending: false });
 
-  if (isEmail) {
-    query = query.eq("email", identifier);
-  } else {
-    query = query.eq("user_name", identifier);
+  if (error) {
+    console.error(error);
+    return;
   }
 
-  const { data, error } = await query.single();
-
-  if (error) return null;
-  return data;
+  TASKS = data || [];
+  renderTasks();
 }
 
 // ======================
-// STEP 2 — AUTH SUPABASE
+// ICON BY STATUS
 // ======================
-async function authenticate(email, password) {
-  return await supabase.auth.signInWithPassword({
-    email,
-    password
+function getStatusIcon(status) {
+  switch (status) {
+    case "PROCESS":
+      return "⚙️";
+    case "DONE":
+      return "✅";
+    case "PAUSED":
+      return "⏸️";
+    case "FAIL":
+      return "❌";
+    case "STAGED":
+      return "📦";
+    default:
+      return "•";
+  }
+}
+
+// ======================
+// RENDER TASKS
+// ======================
+function renderTasks() {
+  const container = document.getElementById("tasks");
+
+  container.innerHTML = `
+    
+    <div class="tasks-header">
+      <div class="tasks-title">TASKS</div>
+      <div class="tasks-user">User: ${USER.full_name}</div>
+    </div>
+
+    <div class="tasks-controls">
+
+      <div class="tasks-filters">
+        <select id="filterAgent">
+          <option>All Agents</option>
+        </select>
+
+        <select id="filterLLM">
+          <option>All LLM</option>
+        </select>
+
+        <select id="filterStatus">
+          <option>All Status</option>
+        </select>
+      </div>
+
+      <div class="tasks-actions">
+        <button onclick="runAction('PROCESS')">▶</button>
+        <button onclick="runAction('PAUSED')">⏸</button>
+        <button onclick="runAction('DELETED')">■</button>
+      </div>
+
+    </div>
+
+    <div class="task-row task-head">
+      <div><input type="checkbox" id="selectAll" onclick="toggleAll()"></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+
+  `;
+
+  TASKS.forEach(t => {
+    container.innerHTML += `
+      <div class="task-row">
+
+        <div class="task-check">
+          <input type="checkbox" class="taskSelect" data-id="${t.id}">
+        </div>
+
+        <div class="task-icon">
+          ${getStatusIcon(t.status)}
+        </div>
+
+        <div class="task-content">
+          <div class="task-id">${t.id}</div>
+          <div class="task-llm">${t.llm_provider || "-"}</div>
+          <div class="task-url">${t.full_url}</div>
+        </div>
+
+        <div class="task-status">
+          ${t.status}
+        </div>
+
+      </div>
+    `;
   });
 }
 
 // ======================
-// LOGIN REAL (2 STEP)
+// SELECT ALL
+// ======================
+window.toggleAll = function () {
+  const state = document.getElementById("selectAll").checked;
+  document.querySelectorAll(".taskSelect").forEach(c => (c.checked = state));
+};
+
+// ======================
+// ACTIONS
+// ======================
+window.runAction = function (action) {
+
+  const selected = [...document.querySelectorAll(".taskSelect:checked")]
+    .map(el => el.dataset.id);
+
+  if (!selected.length) {
+    alert("Nenhuma task selecionada");
+    return;
+  }
+
+  const confirmMsg = `Você selecionou ${action} nas tasks selecionadas. Confirmar?`;
+
+  if (!confirm(confirmMsg)) return;
+
+  console.log("ACTION:", action, selected);
+};
+
+// ======================
+// LOGIN
 // ======================
 async function login() {
   const identifier = document.getElementById("login_email")?.value;
@@ -99,17 +182,24 @@ async function login() {
     return;
   }
 
-  const client = await fetchClient(identifier);
+  const { data: client } = await supabase
+    .from("clients")
+    .select("*")
+    .or(`email.eq.${identifier},user_name.eq.${identifier}`)
+    .single();
 
   if (!client) {
-    alert("User not found in clients");
+    alert("User not found");
     return;
   }
 
-  const { data, error } = await authenticate(client.email, password);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: client.email,
+    password
+  });
 
-  if (error || !data?.user) {
-    alert("Authentication failed");
+  if (error) {
+    alert("Auth failed");
     return;
   }
 
@@ -122,69 +212,8 @@ async function login() {
     email: client.email
   };
 
-  console.log("LOGIN OK:", USER);
-
   showTab(3);
-}
-
-function loginMock() {
-  login();
-}
-
-function openRegister() {
-  showTab(7);
-}
-
-// ======================
-// INSERT TASK
-// ======================
-async function insertTask() {
-
-  const agentSelect =
-    document.querySelector("#tab2 select")?.value || "meshwave65";
-
-  const agentNew =
-    document.querySelector("#tab2 input[placeholder='agent override']")?.value;
-
-  const link =
-    document.querySelector("#tab2 input[placeholder='https://...']")?.value;
-
-  if (!link) {
-    alert("Link obrigatório");
-    return;
-  }
-
-  if (!SESSION.logged || !USER.id) {
-    alert("Not authenticated");
-    return;
-  }
-
-  const slug = extractSlugFromUrl(link);
-
-  const payload = {
-    user_name: USER.user_name,
-    agente: agentNew || agentSelect,
-    full_url: link,
-    session_user_id: USER.id,
-    slug
-  };
-
-  const res = await fetch("http://127.0.0.1:3000/task/insert", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-
-  if (!data.ok) {
-    alert(data.error || "Insert error");
-    return;
-  }
-
-  alert("Task inserida: " + slug);
+  loadTasks();
 }
 
 // ======================
@@ -192,16 +221,10 @@ async function insertTask() {
 // ======================
 window.showTab = showTab;
 window.login = login;
-window.loginMock = loginMock;
-window.openRegister = openRegister;
-window.insertTask = insertTask;
 
 // ======================
 // INIT
 // ======================
 window.addEventListener("DOMContentLoaded", () => {
   showTab(1);
-
-  const btn = document.querySelector("#tab2 button:last-of-type");
-  if (btn) btn.onclick = insertTask;
 });
