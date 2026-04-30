@@ -19,6 +19,7 @@ let SESSION = {
 
 let TASKS = [];
 let TASK_SELECTION = new Set();
+let FILES_DATA = [];
 
 // ======================
 // LLM DETECTOR
@@ -118,6 +119,7 @@ async function login() {
   // Vai para a aba de Tasks
   showTab(3);
   loadTasks();
+  loadFiles();
 }
 
 // ======================
@@ -241,6 +243,95 @@ function toggleAllTasks(el) {
 // ======================
 // ACTIONS (RUN, PAUSE, DELETE)
 // ======================
+// ======================
+// FILES (PAGINA 4)
+// ======================
+async function loadFiles() {
+  if (!USER.user_name || USER.user_name === "guest") return;
+
+    const API_BASE = "https://appsofia.meshwave.com.br";
+//    const API_BASE = "http://127.0.0.1:3000";
+  
+  try {
+    const resp = await fetch(`${API_BASE}/files?user_name=${USER.user_name}`);
+    const json = await resp.json();
+
+    if (json.ok && json.data) {
+      FILES_DATA = json.data.providers || [];
+      renderFiles();
+    }
+  } catch (err) {
+    console.error("Erro ao carregar arquivos:", err);
+  }
+}
+
+function renderFiles() {
+  const container = document.getElementById("files");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (FILES_DATA.length === 0) {
+    container.innerHTML = '<div style="padding:10px; font-size:10px; color:#8aa0b5;">Nenhum arquivo encontrado.</div>';
+    return;
+  }
+
+  FILES_DATA.forEach(provider => {
+    // Provider Header
+    const pHeader = document.createElement("div");
+    pHeader.style.cssText = "padding:8px; font-size:10px; font-weight:bold; background:#1a2433; color:#4ea1ff; border-bottom:1px solid #1f2a3a;";
+    pHeader.textContent = provider.provider.toUpperCase();
+    container.appendChild(pHeader);
+
+    provider.tasks.forEach(task => {
+      task.files.forEach(file => {
+        const row = document.createElement("div");
+        row.className = "file-row";
+        row.innerHTML = `
+          <div style="font-size:10px; color:#8aa0b5;">📄</div>
+          <div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${file.filename}">
+            ${file.filename}
+          </div>
+        `;
+        row.onclick = () => previewFile(file);
+        container.appendChild(row);
+      });
+    });
+  });
+}
+
+function previewFile(file) {
+  const preview = document.getElementById("filePreview");
+  if (!preview) return;
+
+  preview.innerHTML = `
+    <div style="border-bottom:1px solid #1f2a3a; padding-bottom:8px; margin-bottom:10px;">
+      <b style="color:#4ea1ff; font-size:11px;">${file.filename}</b>
+      <div style="font-size:8px; color:#8aa0b5; margin-top:4px;">Caminho: ${file.path}</div>
+    </div>
+    <div style="color:#ccc; font-family:monospace; white-space:pre-wrap; font-size:10px;">
+      Carregando conteúdo...
+    </div>
+  `;
+
+  // Aqui poderíamos fazer um fetch do conteúdo se o backend suportasse.
+  // Por enquanto, mostramos os metadados conforme o layout original.
+  setTimeout(() => {
+    preview.innerHTML = `
+      <div style="border-bottom:1px solid #1f2a3a; padding-bottom:8px; margin-bottom:10px;">
+        <b style="color:#4ea1ff; font-size:11px;">${file.filename}</b>
+        <div style="font-size:8px; color:#8aa0b5; margin-top:4px;">Caminho: ${file.path}</div>
+      </div>
+      <div style="background:#0e141d; padding:8px; border-radius:4px; border:1px solid #1f2a3a;">
+        <p style="margin:0; color:#8aa0b5; font-size:9px;">
+          O conteúdo deste arquivo está armazenado no servidor local. 
+          Para visualizar o conteúdo completo, utilize o módulo de busca ou download.
+        </p>
+      </div>
+    `;
+  }, 500);
+}
+
 async function runAction(action) {
   if (TASK_SELECTION.size === 0) return alert("No tasks selected");
 
@@ -279,6 +370,8 @@ window.toggleTask = toggleTask;
 window.toggleAllTasks = toggleAllTasks;
 window.runAction = runAction;
 window.renderTasks = renderTasks; // For filter onchange
+window.loadFiles = loadFiles;
+window.previewFile = previewFile;
 
 // INIT
 document.addEventListener("DOMContentLoaded", () => {

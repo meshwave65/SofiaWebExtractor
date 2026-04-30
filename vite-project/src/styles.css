@@ -222,3 +222,19 @@ select {
   color: #4ea1ff;
   text-decoration: none;
 }
+
+/* ================= FILES EXTRA ================= */
+#files {
+  border: 1px solid #1f2a3a;
+  overflow-y: auto;
+  background: #0e141d;
+}
+
+#filePreview {
+  border: 1px solid #1f2a3a;
+  padding: 10px;
+  overflow-y: auto;
+  background: #0b0f14;
+  font-size: 9px;
+  line-height: 1.4;
+}
