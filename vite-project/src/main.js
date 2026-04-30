@@ -164,6 +164,50 @@ async function loadTasks() {
 }
 
 // ======================
+// INSERT TASK
+// ======================
+async function insertTask() {
+  const agentSelect =
+    document.querySelector("#tab2 select")?.value || "meshwave65";
+
+  const agentNew =
+    document.querySelector("#tab2 input[placeholder='agent override']")?.value;
+
+  const link =
+    document.querySelector("#tab2 input[placeholder='https://...']")?.value;
+
+  if (!link) return alert("Link obrigatório");
+  if (!SESSION.logged || !USER.id) return alert("Not authenticated");
+
+  const slug = extractSlugFromUrl(link);
+  const llm_provider = extractLLMProvider(link);
+
+  const payload = {
+    user_name: USER.user_name,
+    agente: agentNew || agentSelect,
+    full_url: link,
+    session_user_id: USER.id,
+    slug,
+    llm_provider
+  };
+
+  const res = await fetch("http://127.0.0.1:3000/task/insert", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) return alert(data.error || "Insert error");
+
+  alert("Task inserida");
+  loadTasks();
+}
+
+
+
+// ======================
 // TOOLBAR (NOVA UI)
 // ======================
 function renderTaskToolbar() {
