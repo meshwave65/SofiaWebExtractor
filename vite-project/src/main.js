@@ -18,26 +18,118 @@ let SESSION = {
 };
 
 let TASKS = [];
+let TASK_SELECTION = new Set();
 
 // ======================
-// TAB SYSTEM
+// LLM DETECTOR
+// ======================
+function extractLLMProvider(url = "") {
+  if (!url) return "unknown";
+
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.includes("chatgpt")) return "chatgpt";
+    if (host.includes("grok")) return "grok";
+    if (host.includes("manus")) return "manus";
+    if (host.includes("perplexity")) return "perplexity";
+    if (host.includes("claude")) return "claude";
+  } catch {}
+
+  const u = url.toLowerCase();
+  if (u.includes("chatgpt")) return "chatgpt";
+  if (u.includes("grok")) return "grok";
+  if (u.includes("manus")) return "manus";
+  if (u.includes("perplexity")) return "perplexity";
+  if (u.includes("claude")) return "claude";
+
+  return "unknown";
+}
+
+// ======================
+// SLUG
+// ======================
+function extractSlugFromUrl(url) {
+  if (!url) return null;
+  try {
+    const clean = url.split("?")[0].split("#")[0];
+    const parts = clean.split("/").filter(Boolean);
+    return parts[parts.length - 1] || null;
+  } catch {
+    return null;
+  }
+}
+
+// ======================
+// TAB
 // ======================
 function showTab(n) {
-  document.querySelectorAll(".tab").forEach(t => (t.style.display = "none"));
+  document.querySelectorAll(".tab").forEach(t => t.style.display = "none");
   const el = document.getElementById("tab" + n);
   if (el) el.style.display = "block";
 }
 
 // ======================
-// FETCH TASKS
+// LOGIN (FIX USER INJECTION)
+// ======================
+async function login() {
+  const inputVal = document.getElementById("login_email")?.value?.trim();
+  const pass = document.getElementById("login_pass")?.value;
+
+  if (!inputVal || !pass) return alert("Preencha todos os campos");
+
+  // --- CAMADA 1: Verificar na tabela 'clients' ---
+  // Buscamos por email OU user_name
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .select("email, user_name, full_name")
+    .or(`email.eq.${inputVal},user_name.eq.${inputVal}`)
+    .single();
+
+  if (clientError || !client) {
+    console.error("Erro Camada 1:", clientError);
+    return alert("Usuário ou e-mail não encontrados");
+  }
+
+  // Agora temos o e-mail real de cadastro para a Camada 2
+  const realEmail = client.email;
+
+  // --- CAMADA 2: Autenticação no Supabase Auth ---
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email: realEmail,
+    password: pass
+  });
+
+  if (authError) {
+    console.error("Erro Camada 2:", authError);
+    return alert("Falha na autenticação: e-mail ou password inválidos");
+  }
+
+  // Sucesso! Atualizamos o estado global
+  SESSION.logged = true;
+  USER.id = authData.user.id;
+  USER.email = realEmail;
+  USER.user_name = client.user_name;
+  USER.full_name = client.full_name;
+
+  // Atualiza UI de apresentação
+  const el = document.getElementById("taskUserName");
+  if (el) el.textContent = USER.full_name || USER.user_name;
+
+  // Vai para a aba de Tasks
+  showTab(3);
+  loadTasks();
+}
+
+// ======================
+// LOAD TASKS (REAL DB)
 // ======================
 async function loadTasks() {
-  if (!USER.user_name) return;
+  if (!USER.id) return;
 
   const { data, error } = await supabase
     .from("appsofia_tasks")
     .select("*")
-    .eq("user_name", USER.user_name)
+    .eq("session_user_id", USER.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -45,186 +137,155 @@ async function loadTasks() {
     return;
   }
 
-  TASKS = data || [];
+  TASKS = (data || []).map(t => ({
+    ...t,
+    llm_provider: t.llm_provider || extractLLMProvider(t.full_url)
+  }));
+
+  updateFilters();
   renderTasks();
 }
 
 // ======================
-// ICON BY STATUS
+// FILTER LOGIC
 // ======================
-function getStatusIcon(status) {
-  switch (status) {
-    case "PROCESS":
-      return "⚙️";
-    case "DONE":
-      return "✅";
-    case "PAUSED":
-      return "⏸️";
-    case "FAIL":
-      return "❌";
-    case "STAGED":
-      return "📦";
-    default:
-      return "•";
+function updateFilters() {
+  const agents = [...new Set(TASKS.map(t => t.agent_name).filter(Boolean))];
+  const llms = [...new Set(TASKS.map(t => t.llm_provider).filter(Boolean))];
+  const statuses = [...new Set(TASKS.map(t => t.status).filter(Boolean))];
+
+  const fAgent = document.getElementById("filter_agent");
+  const fLlm = document.getElementById("filter_llm");
+  const fStatus = document.getElementById("filter_status");
+
+  if (fAgent) {
+    fAgent.innerHTML = '<option value="ALL">All Agents</option>' + 
+      agents.map(a => `<option value="${a}">${a}</option>`).join("");
+  }
+  if (fLlm) {
+    fLlm.innerHTML = '<option value="ALL">All LLM</option>' + 
+      llms.map(l => `<option value="${l}">${l}</option>`).join("");
+  }
+  if (fStatus) {
+    fStatus.innerHTML = '<option value="ALL">All Status</option>' + 
+      statuses.map(s => `<option value="${s}">${s}</option>`).join("");
   }
 }
 
+function getFilteredTasks() {
+  const agent = document.getElementById("filter_agent")?.value || "ALL";
+  const llm = document.getElementById("filter_llm")?.value || "ALL";
+  const status = document.getElementById("filter_status")?.value || "ALL";
+
+  return TASKS.filter(t => {
+    const mAgent = agent === "ALL" || t.agent_name === agent;
+    const mLlm = llm === "ALL" || t.llm_provider === llm;
+    const mStatus = status === "ALL" || t.status === status;
+    return mAgent && mLlm && mStatus;
+  });
+}
+
 // ======================
-// RENDER TASKS
+// RENDER TASKS (SAFE UI)
 // ======================
 function renderTasks() {
   const container = document.getElementById("tasks");
+  if (!container) return;
 
-  container.innerHTML = `
-    
-    <div class="tasks-header">
-      <div class="tasks-title">TASKS</div>
-      <div class="tasks-user">User: ${USER.full_name}</div>
-    </div>
+  const tasks = getFilteredTasks();
+  container.innerHTML = "";
 
-    <div class="tasks-controls">
+  tasks.forEach(t => {
+    const isSelected = TASK_SELECTION.has(t.id);
+    const row = document.createElement("div");
+    row.className = "task-row";
 
-      <div class="tasks-filters">
-        <select id="filterAgent">
-          <option>All Agents</option>
-        </select>
-
-        <select id="filterLLM">
-          <option>All LLM</option>
-        </select>
-
-        <select id="filterStatus">
-          <option>All Status</option>
-        </select>
+    row.innerHTML = `
+      <div class="task-check">
+        <input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleTask('${t.id}')">
       </div>
 
-      <div class="tasks-actions">
-        <button onclick="runAction('PROCESS')">▶</button>
-        <button onclick="runAction('PAUSED')">⏸</button>
-        <button onclick="runAction('DELETED')">■</button>
+      <div class="task-icon">⚙</div>
+
+      <div class="task-content">
+        <div class="task-id">${t.slug || t.id}</div>
+        <div class="task-llm">${t.llm_provider}</div>
+        <div class="task-url">${t.full_url || ""}</div>
       </div>
 
-    </div>
-
-    <div class="task-row task-head">
-      <div><input type="checkbox" id="selectAll" onclick="toggleAll()"></div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-
-  `;
-
-  TASKS.forEach(t => {
-    container.innerHTML += `
-      <div class="task-row">
-
-        <div class="task-check">
-          <input type="checkbox" class="taskSelect" data-id="${t.id}">
-        </div>
-
-        <div class="task-icon">
-          ${getStatusIcon(t.status)}
-        </div>
-
-        <div class="task-content">
-          <div class="task-id">${t.id}</div>
-          <div class="task-llm">${t.llm_provider || "-"}</div>
-          <div class="task-url">${t.full_url}</div>
-        </div>
-
-        <div class="task-status">
-          ${t.status}
-        </div>
-
-      </div>
+      <div class="task-status">${t.status}</div>
     `;
+
+    container.appendChild(row);
   });
 }
 
 // ======================
-// SELECT ALL
+// SELECTION
 // ======================
-window.toggleAll = function () {
-  const state = document.getElementById("selectAll").checked;
-  document.querySelectorAll(".taskSelect").forEach(c => (c.checked = state));
-};
+function toggleTask(id) {
+  if (TASK_SELECTION.has(id)) TASK_SELECTION.delete(id);
+  else TASK_SELECTION.add(id);
+}
+
+function toggleAllTasks(el) {
+  const tasks = getFilteredTasks();
+  if (el.checked) {
+    tasks.forEach(t => TASK_SELECTION.add(t.id));
+  } else {
+    tasks.forEach(t => TASK_SELECTION.delete(t.id));
+  }
+  renderTasks();
+}
 
 // ======================
-// ACTIONS
+// ACTIONS (RUN, PAUSE, DELETE)
 // ======================
-window.runAction = function (action) {
+async function runAction(action) {
+  if (TASK_SELECTION.size === 0) return alert("No tasks selected");
 
-  const selected = [...document.querySelectorAll(".taskSelect:checked")]
-    .map(el => el.dataset.id);
+  const ids = Array.from(TASK_SELECTION);
+  let updateData = {};
 
-  if (!selected.length) {
-    alert("Nenhuma task selecionada");
-    return;
+  if (action === "RUN") updateData = { status: "RUNNING" };
+  else if (action === "PAUSE") updateData = { status: "PAUSED" };
+  else if (action === "DELETE") {
+    if (!confirm(`Delete ${ids.length} tasks?`)) return;
+    const { error } = await supabase
+      .from("appsofia_tasks")
+      .delete()
+      .in("id", ids);
+    
+    if (error) return alert("Delete failed");
+    TASK_SELECTION.clear();
+    return loadTasks();
   }
 
-  const confirmMsg = `Você selecionou ${action} nas tasks selecionadas. Confirmar?`;
+  const { error } = await supabase
+    .from("appsofia_tasks")
+    .update(updateData)
+    .in("id", ids);
 
-  if (!confirm(confirmMsg)) return;
-
-  console.log("ACTION:", action, selected);
-};
-
-// ======================
-// LOGIN
-// ======================
-async function login() {
-  const identifier = document.getElementById("login_email")?.value;
-  const password = document.getElementById("login_pass")?.value;
-
-  if (!identifier || !password) {
-    alert("Fill login fields");
-    return;
-  }
-
-  const { data: client } = await supabase
-    .from("clients")
-    .select("*")
-    .or(`email.eq.${identifier},user_name.eq.${identifier}`)
-    .single();
-
-  if (!client) {
-    alert("User not found");
-    return;
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: client.email,
-    password
-  });
-
-  if (error) {
-    alert("Auth failed");
-    return;
-  }
-
-  SESSION.logged = true;
-
-  USER = {
-    id: data.user.id,
-    user_name: client.user_name,
-    full_name: client.full_name || client.user_name,
-    email: client.email
-  };
-
-  showTab(3);
+  if (error) return alert("Action failed");
   loadTasks();
 }
 
 // ======================
-// EXPORTS
+// EXPORT
 // ======================
 window.showTab = showTab;
 window.login = login;
+window.toggleTask = toggleTask;
+window.toggleAllTasks = toggleAllTasks;
+window.runAction = runAction;
+window.renderTasks = renderTasks; // For filter onchange
 
-// ======================
 // INIT
-// ======================
-window.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   showTab(1);
+
+  // Add event listeners for filters
+  ["filter_agent", "filter_llm", "filter_status"].forEach(id => {
+    document.getElementById(id)?.addEventListener("change", renderTasks);
+  });
 });
