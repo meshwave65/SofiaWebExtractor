@@ -72,9 +72,9 @@
       </select>
 
       <div style="margin-left:auto; display:flex; gap:6px;">
-        <button onclick="runAction('RUN')" style="width:36px; background:#2f7d32; color:white;">▶</button>
-        <button onclick="runAction('PAUSE')" style="width:36px; background:#666; color:white;">⏸</button>
-        <button onclick="runAction('DELETE')" style="width:36px; background:#b83232; color:white;">■</button>
+        <button onclick="runAction('RUN')" class="action-btn action-run" title="Run">▶</button>
+        <button onclick="runAction('PAUSE')" class="action-btn action-pause" title="Pause">⏸</button>
+        <button onclick="runAction('DELETE')" class="action-btn action-delete" title="Delete">■</button>
       </div>
 
     </div>
@@ -185,6 +185,32 @@
     <div id="reg_msg"></div>
 
   </div>
+
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+
+    <img class="logo"
+      src="https://www.meshwave.com.br/assets/meshwave_logo_nova-C_vq8StO.png"
+    />
+
+    <div>
+      <div class="t10">MeshWave Cyber Technologies ®</div>
+
+      <div class="t8">
+        Centro Empresarial Mourisco<br>
+        Praia de Botafogo, 501 - 2º andar - Torre Rio Sul<br>
+
+        <a href="https://www.mEshwave.com.br">www.meshwave.com.br</a> |
+        <a href="mailto:info@meshwave.com.br">info@meshwave.com.br</a><br>
+
+        <a href="https://wa.me/351914845439">WhatsApp PT</a> |
+        <a href="https://wa.me/5521972341965">WhatsApp BR</a>
+      </div>
+    </div>
+
+  </footer>
+
 
   <script type="module" src="/src/main.js"></script>
 

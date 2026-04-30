@@ -238,3 +238,202 @@ select {
   font-size: 9px;
   line-height: 1.4;
 }
+
+  
+/* =========================
+   CHECKBOX MAIS DISCRETO
+========================= */
+.task-check input {
+  transform: scale(0.75);
+  opacity: 0.85;
+}
+
+/* =========================
+   STATUS BADGE FIXO (COLUNA 4)
+========================= */
+.task-status {
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  width: 78px;              /* fixa largura (base PROCESS) */
+  padding: 3px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* =========================
+   STATUS COLORS + ICON STYLE
+========================= */
+.status-STAGED {
+  background: #1a2433;
+  color: #9aa0a6;
+}
+
+.status-PROCESSING {
+  background: #1b2a3a;
+  color: #4ea1ff;
+}
+
+.status-DONE {
+  background: #12321f;
+  color: #33d17a;
+}
+
+.status-FAIL {
+  background: #3a1b1b;
+  color: #ff5c5c;
+}
+
+.status-DELETED {
+  background: #2a2a2a;
+  color: #888;
+}
+
+/* =========================
+   STATUS ICON (COLUNA VISUAL)
+========================= */
+.status-icon {
+  font-size: 12px;
+  text-align: center;
+}
+
+/* icons visuais */
+.icon-staged::before { content: "⬜"; }
+.icon-processing::before { content: "⚙️"; }
+.icon-done::before { content: "🏁"; }
+.icon-fail::before { content: "🚨"; }
+.icon-deleted::before { content: "🗑️"; }
+
+/* =========================
+   ACTION BUTTONS (TOOLBAR)
+========================= */
+.task-toolbar button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid #263447;
+  color: #cfd6e4;
+
+  padding: 6px 10px;
+  border-radius: 10px;
+
+  font-size: 10px;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.task-toolbar button:hover {
+  background: rgba(78,161,255,0.15);
+  border-color: #4ea1ff;
+  transform: translateY(-1px);
+}
+
+/* botão principal (PROCESS) */
+.task-toolbar .primary {
+  background: #4ea1ff;
+  color: #0b0f14;
+  font-weight: 600;
+}
+
+/* botão refresh (novo) */
+.task-toolbar .refresh {
+  background: rgba(255,255,255,0.04);
+  color: #8aa0b5;
+}
+
+.status-STAGED {
+  background: #2b3442;
+  color: #cfd6e4;
+}
+
+.status-PROCESS {
+  background: #1e4ed8;
+  color: white;
+}
+
+.status-DONE {
+  background: #16a34a;
+  color: white;
+}
+
+.status-FAIL {
+  background: #dc2626;
+  color: white;
+}
+
+.status-DELETED {
+  background: #6b7280;
+  color: white;
+}
+
+/* FIX: TODOS MESMO TAMANHO */
+.task-status {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 80px;   /* 🔥 chave do alinhamento */
+  display: inline-block;
+}
+
+/* =========================
+   SAFE STYLED TOOLBAR (NO LAYOUT BREAK)
+========================= */
+
+.task-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  /* CRÍTICO: evita quebrar footer/layout */
+  position: relative;
+  flex-wrap: wrap;
+
+  padding: 8px 0;
+  margin-bottom: 10px;
+}
+
+/* BOTÕES BASE */
+.task-toolbar button {
+  border: 1px solid #263447;
+  background: #1a2433;
+  color: #cfd6e4;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+/* hover sem deslocar layout */
+.task-toolbar button:hover {
+  border-color: #4ea1ff;
+  box-shadow: 0 0 10px rgba(78,161,255,0.25);
+}
+
+/* PLAY */
+.task-toolbar .btn-run {
+  background: linear-gradient(135deg, #1e4ed8, #3b82f6);
+  color: white;
+}
+
+/* PAUSE */
+.task-toolbar .btn-pause {
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+}
+
+/* DELETE */
+.task-toolbar .btn-delete {
+  background: rgba(220,38,38,0.15);
+  color: #ef4444;
+}
+
+/* REFRESH */
+.task-toolbar .btn-refresh {
+  margin-left: auto;
+  background: rgba(148,163,184,0.12);
+  color: #94a3b8;
+}
