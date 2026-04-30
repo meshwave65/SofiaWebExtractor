@@ -164,48 +164,63 @@ async function loadTasks() {
 }
 
 // ======================
-// INSERT TASK
+// INSERT TASK - DIRETO NO SUPABASE (Sem usar backend)
 // ======================
 async function insertTask() {
-  const agentSelect =
-    document.querySelector("#tab2 select")?.value || "meshwave65";
+  // Captura os valores dos inputs da aba Insert
+  const agentSelect = document.querySelector("#tab2 select")?.value || "meshwave65";
+  const agentOverride = document.querySelector("#tab2 input[placeholder='agent override']")?.value?.trim();
+  const linkInput = document.querySelector("#tab2 input[placeholder='https://...']");
+  const link = linkInput ? linkInput.value.trim() : "";
 
-  const agentNew =
-    document.querySelector("#tab2 input[placeholder='agent override']")?.value;
+  if (!link) {
+    alert("❌ O link (URL) é obrigatório!");
+    return;
+  }
 
-  const link =
-    document.querySelector("#tab2 input[placeholder='https://...']")?.value;
-
-  if (!link) return alert("Link obrigatório");
-  if (!SESSION.logged || !USER.id) return alert("Not authenticated");
+  if (!SESSION.logged || !USER.id) {
+    alert("❌ Você precisa estar logado para inserir uma task.");
+    showTab(1);
+    return;
+  }
 
   const slug = extractSlugFromUrl(link);
   const llm_provider = extractLLMProvider(link);
 
   const payload = {
     user_name: USER.user_name,
-    agente: agentNew || agentSelect,
+    agente: agentOverride || agentSelect,
     full_url: link,
     session_user_id: USER.id,
-    slug,
-    llm_provider
+    slug: slug,
+    llm_provider: llm_provider,
+    status: "STAGED"
   };
 
-  const res = await fetch("http://127.0.0.1:3000/task/insert", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  console.log("🔄 Tentando inserir no Supabase:", payload);
 
-  const data = await res.json();
+  // === INSERT DIRETO NO SUPABASE ===
+  const { data, error } = await supabase
+    .from("appsofia_tasks")
+    .insert([payload])
+    .select();
 
-  if (!data.ok) return alert(data.error || "Insert error");
+  if (error) {
+    console.error("❌ Erro ao inserir task:", error);
+    alert("Erro ao salvar no banco:\n" + (error.message || error));
+    return;
+  }
 
-  alert("Task inserida");
-  loadTasks();
+  console.log("✅ Task inserida com sucesso:", data);
+  alert("✅ Task inserida com sucesso!");
+
+  // Limpa os campos após inserir
+  if (linkInput) linkInput.value = "";
+  const overrideInput = document.querySelector("#tab2 input[placeholder='agent override']");
+  if (overrideInput) overrideInput.value = "";
+
+  loadTasks();        // Atualiza a lista de tasks automaticamente
 }
-
-
 
 // ======================
 // TOOLBAR (NOVA UI)
@@ -361,6 +376,8 @@ window.login = login;
 window.loadTasks = loadTasks;
 window.loadFiles = loadFiles;
 window.toggleTask = toggleTask;
+window.insertTask = insertTask;     // ← Tem que ter esta linha
+window.runAction = (a) => console.log("ACTION:", a);
 
 // placeholder (UI only)
 window.runAction = (a) => console.log("ACTION:", a);
