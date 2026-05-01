@@ -230,13 +230,62 @@ select {
   background: #0e141d;
 }
 
+/* ================= FILE PREVIEW - LAYOUT MELHORADO ================= */
 #filePreview {
   border: 1px solid #1f2a3a;
-  padding: 10px;
+  padding: 12px;
   overflow-y: auto;
   background: #0b0f14;
-  font-size: 9px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  height: 100%;                    /* importante */
+}
+
+/* Cabeçalho compacto: Nome + Botão Download */
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1f2a3a;
+  margin-bottom: 12px;
+  flex-shrink: 0;                  /* não encolhe */
+}
+
+.preview-header strong {
+  font-size: 12px;
+  word-break: break-all;
+  flex: 1;
+  padding-right: 10px;
+}
+
+.preview-content {
+  flex: 1;                         /* ocupa todo o espaço restante */
+  overflow-y: auto;
+  padding: 4px;
+  background: #111826;
+  border-radius: 6px;
+}
+
+.preview-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+  margin: 0 auto;
+}
+
+.preview-content pre {
+  font-size: 10.5px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #0b0f14;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 0;
+  max-height: 100%;
 }
 
   
@@ -436,4 +485,183 @@ select {
   margin-left: auto;
   background: rgba(148,163,184,0.12);
   color: #94a3b8;
+}
+
+/* ================= FILES - MELHORADO ================= */
+#files {
+  border: 1px solid #1f2a3a;
+  overflow-y: auto;
+  background: #0e141d;
+  font-size: 11px;           /* Diminuído */
+  padding: 4px;
+}
+
+.file-provider {
+  margin: 12px 0 6px 0;
+  padding: 6px 10px;
+  background: #1a2433;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4ea1ff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.file-task {
+  margin-left: 12px;
+  margin-bottom: 8px;
+}
+
+.file-task-header {
+  padding: 4px 8px;
+  background: #16213a;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #8aa0b5;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 80px;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10.5px;           /* Fonte menor */
+  align-items: center;
+}
+
+.file-row:hover {
+  background: #1f2a3a;
+}
+
+.file-row .filename {
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.file-row .filesize {
+  font-size: 9px;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* Preview Panel */
+#filePreview {
+  border: 1px solid #1f2a3a;
+  padding: 12px;
+  overflow-y: auto;
+  background: #0b0f14;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+#filePreview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+/* Botão Download */
+.download-btn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #4ea1ff;
+  color: #0b0f14;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.download-btn:hover {
+  background: #60a5fa;
+}
+
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;           /* reduzido */
+  background: #1a2433;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+  min-height: 36px;            /* altura controlada */
+}
+
+.preview-header strong {
+  font-size: 11.5px;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #111826;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.preview-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.preview-content pre {
+  font-size: 10.2px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+  padding: 10px;
+  background: #0b0f14;
+}
+
+/* PREVIEW MELHORADO */
+#filePreview {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #1a2433;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.preview-header strong {
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #111826;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.preview-content pre {
+  font-size: 10.5px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
 }

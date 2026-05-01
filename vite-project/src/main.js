@@ -314,17 +314,17 @@ async function loadFiles() {
     const json = await resp.json();
 
     FILES_DATA = json?.data?.providers || [];
-
     renderFiles();
 
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao carregar arquivos:", err);
     FILES_DATA = [];
+    renderFiles();
   }
 }
 
 // ======================
-// FILES RENDER
+// RENDER FILES (mantém o que já estava bom)
 // ======================
 function renderFiles() {
   const container = document.getElementById("files");
@@ -332,33 +332,102 @@ function renderFiles() {
 
   container.innerHTML = "";
 
-  if (!FILES_DATA.length) {
-    container.innerHTML = `<div style="padding:10px;color:#8aa0b5;">Sem arquivos</div>`;
+  if (!FILES_DATA || FILES_DATA.length === 0) {
+    container.innerHTML = `<div style="padding:30px;color:#8aa0b5;text-align:center;">Nenhum arquivo encontrado</div>`;
     return;
   }
 
   FILES_DATA.forEach(provider => {
-    const header = document.createElement("div");
-    header.textContent = provider.provider;
-    header.style.cssText =
-      "padding:8px;font-size:10px;color:#4ea1ff;border-bottom:1px solid #1f2a3a;";
-    container.appendChild(header);
+    const providerEl = document.createElement("div");
+    providerEl.className = "file-provider";
+    providerEl.textContent = `📁 ${provider.provider.toUpperCase()}`;
+    container.appendChild(providerEl);
 
     (provider.tasks || []).forEach(task => {
+      const taskEl = document.createElement("div");
+      taskEl.className = "file-task";
+
+      const header = document.createElement("div");
+      header.className = "file-task-header";
+      header.innerHTML = `Task: <strong>${task.task_id}</strong> <span style="float:right; font-size:9px;">${task.files?.length || 0} arq.</span>`;
+      taskEl.appendChild(header);
+
       (task.files || []).forEach(file => {
         const row = document.createElement("div");
         row.className = "file-row";
 
+        const isImage = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file.filename);
+
         row.innerHTML = `
-          <div>📄</div>
-          <div>${file.filename}</div>
+          <div>${isImage ? '🖼️' : '📄'}</div>
+          <div class="filename">${file.filename}</div>
         `;
 
-        container.appendChild(row);
+        row.onclick = () => previewFile(file);
+        taskEl.appendChild(row);
       });
+
+      container.appendChild(taskEl);
     });
   });
 }
+
+// ======================
+// PREVIEW FILE + DOWNLOAD
+// ======================
+async function previewFile(file) {
+  const previewPanel = document.getElementById("filePreview");
+
+  previewPanel.innerHTML = `
+    <div class="preview-header">
+      <strong>${file.filename}</strong>
+      <button onclick="downloadFile('${encodeURIComponent(file.path)}')" class="download-btn">
+        ⬇️ Baixar
+      </button>
+    </div>
+    <div id="preview-content" class="preview-content">
+      Carregando...
+    </div>
+  `;
+
+  const contentArea = document.getElementById("preview-content");
+  const isImage = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file.filename);
+
+  try {
+    const url = `/api/file?path=${encodeURIComponent(file.path)}`;
+
+    if (isImage) {
+      contentArea.innerHTML = `<img src="${url}" style="max-width:100%; height:auto;" alt="${file.filename}">`;
+    } else {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("Falha ao carregar");
+      const text = await resp.text();
+      contentArea.innerHTML = `<pre>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
+    }
+  } catch (e) {
+    contentArea.innerHTML = `
+      <div style="color:#ff5c5c; padding:20px; text-align:center;">
+        Não foi possível carregar o preview.<br><br>
+        <button onclick="downloadFile('${encodeURIComponent(file.path)}')" class="download-btn">
+          ⬇️ Baixar Arquivo
+        </button>
+      </div>`;
+  }
+}
+
+// ======================
+// DOWNLOAD
+// ======================
+function downloadFile(encodedPath) {
+  const a = document.createElement('a');
+  a.href = `/api/file?path=${encodedPath}&download=true`;
+  a.download = '';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
 
 // ======================
 // TASK SELECTION
