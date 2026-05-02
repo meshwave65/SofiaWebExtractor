@@ -30,6 +30,15 @@ function showTab(n) {
   if (el) el.style.display = "block";
 }
 
+function extractSlugFromUrl(url) {
+  if (!url) return null;
+  try {
+    const clean = url.split("?")[0].split("#")[0];
+    const parts = clean.split("/").filter(Boolean);
+    return parts[parts.length - 1] || null;
+  } catch { return null; }
+}
+
 function getStatusIcon(status) {
   const s = (status || "").toUpperCase();
   if (s === "STAGED") return "📦";
