@@ -219,8 +219,8 @@ async function insertTask() {
     agente: document.getElementById("agent_override").value || document.getElementById("insert_agent").value,
     full_url: url,
     session_user_id: USER.id,
-    slug: extractSlugFromUrl(link),
-    llm_provider: extractLLMProvider(link),
+    slug: extractSlugFromUrl(url),
+    llm_provider: extractLLMProvider(url),
 //    owner_user_id: MESH_WAVE_UUID,
     status: "STAGED"
   };
