@@ -1,215 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Sofia Web Extractor - Sistema de Extração de Interações em Base de Dados</title>
+  <title>Sofia Web Extractor - Professional System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-
 <body>
 
   <!-- ================= NAV ================= -->
-  <div class="tabs">
+  <nav class="tabs">
     <button onclick="showTab(1)">Auth</button>
     <button onclick="showTab(2)">Insert</button>
     <button onclick="showTab(3)">Tasks</button>
     <button onclick="showTab(4)">Files</button>
     <button onclick="showTab(5)">Search</button>
     <button onclick="showTab(6)">Profile</button>
-  </div>
+  </nav>
 
   <!-- ================= AUTH ================= -->
   <div class="tab" id="tab1">
-    <h2>Auth</h2>
-
-    <label>User / Email</label>
-    <input id="login_email" placeholder="user_name ou email">
-
-    <label>Password</label>
-    <input id="login_pass" type="password" placeholder="password">
-
-    <button onclick="login()">Login</button>
-    <button onclick="openRegister()">Create Account</button>
+    <div style="max-width: 400px; margin: 100px auto; background: #0e141d; padding: 30px; border-radius: 12px; border: 1px solid #1f2a3a;">
+      <h2 style="text-align: center; margin-top: 0;">Acesso ao Sistema</h2>
+      <label>User / Email</label>
+      <input id="login_email" placeholder="user_name ou email">
+      <label>Password</label>
+      <input id="login_pass" type="password" placeholder="Sua senha">
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button onclick="login()" style="flex: 1; background: #4ea1ff; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Login</button>
+        <button onclick="showTab(7)" style="flex: 1; background: #1a2433; color: #4ea1ff; border: 1px solid #4ea1ff; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Create Account</button>
+      </div>
+    </div>
   </div>
 
   <!-- ================= INSERT ================= -->
   <div class="tab" id="tab2">
-    <h2>Insert</h2>
-
-    <select></select>
-    <input placeholder="agent override">
-    <input placeholder="https://...">
-
-    <button onclick="clearForm()">Clear</button>
-    <button onclick="insertTask()">Insert</button>
+    <div style="max-width: 600px; margin: 50px auto; background: #0e141d; padding: 30px; border-radius: 12px; border: 1px solid #1f2a3a;">
+      <h2 style="margin-top: 0;">Nova Extração</h2>
+      <label>Agente Executor</label>
+      <select id="insert_agent">
+        <option value="meshwave65">MeshWave Default</option>
+      </select>
+      <label>Agent Override (Opcional)</label>
+      <input id="agent_override" placeholder="ex: custom_agent_v2">
+      <label>Target URL</label>
+      <input id="task_url" placeholder="https://exemplo.com/pagina-alvo">
+      <button onclick="insertTask()" style="margin-top: 25px; background: #4ea1ff; color: white; border: none; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">Iniciar Processo</button>
+    </div>
   </div>
 
   <!-- ================= TASKS ================= -->
   <div class="tab" id="tab3">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+      <h2 style="margin:0;">Gerenciador de Tarefas</h2>
+      <div style="font-size:12px; color:#8aa0b5;">Usuário: <b id="taskUserName">...</b></div>
+    </div>
 
-    <!-- HEADER -->
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h2 style="margin:0;">TASKS</h2>
-      <div style="font-size:12px; color:#8aa0b5;">
-        User: <b id="taskUserName">...</b>
+    <div class="task-toolbar">
+      <button onclick="runAction('PLAY')" class="btn-glossy btn-play" title="Play">▶</button>
+      <button onclick="runAction('PAUSE')" class="btn-glossy btn-pause" title="Pause">⏸</button>
+      <button onclick="runAction('STOP')" class="btn-glossy btn-stop" title="Stop">■</button>
+      <button onclick="runAction('DELETE')" class="btn-glossy btn-delete" title="Delete">🗑</button>
+      <button onclick="loadTasks()" class="btn-glossy btn-refresh" title="Refresh">⟳</button>
+      
+      <div style="display:flex; gap:10px; margin-left: 20px;">
+        <select id="filter_agent" style="width:140px; margin:0;"><option value="ALL">All Agents</option></select>
+        <select id="filter_llm" style="width:140px; margin:0;"><option value="ALL">All LLM</option></select>
       </div>
     </div>
 
-    <!-- CONTROLS -->
-    <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
-
-      <select id="filter_agent" style="width:140px;">
-        <option value="ALL">All Agents</option>
-      </select>
-
-      <select id="filter_llm" style="width:140px;">
-        <option value="ALL">All LLM</option>
-      </select>
-
-      <select id="filter_status" style="width:140px;">
-        <option value="ALL">All Status</option>
-      </select>
-
-      <div style="margin-left:auto; display:flex; gap:6px;">
-        <button onclick="runAction('RUN')" class="action-btn action-run" title="Run">▶</button>
-        <button onclick="runAction('PAUSE')" class="action-btn action-pause" title="Pause">⏸</button>
-        <button onclick="runAction('DELETE')" class="action-btn action-delete" title="Delete">■</button>
-      </div>
-
+    <div class="task-row" style="background: #111826; font-weight: bold; font-size: 11px; border-radius: 8px 8px 0 0; border-bottom: 2px solid #4ea1ff;">
+      <div style="display:flex; justify-content:center;"><input type="checkbox" onchange="toggleAllTasks(this)"></div>
+      <div style="text-align: center;">STATUS</div>
+      <div>DETALHES DA TAREFA</div>
+      <div style="text-align: center;">EXTRACTOR</div>
+      <div style="text-align: center;">DOWNLOADER</div>
     </div>
-
-    <!-- SELECT ALL -->
-    <div class="task-row" style="margin-top:15px;">
-      <div class="task-check">
-        <input type="checkbox" onchange="toggleAllTasks(this)">
-      </div>
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
-
     <div id="tasks"></div>
-
   </div>
 
-  <!-- ================= FILES ================= -->
+  <!-- ================= FILES (FILE MANAGER) ================= -->
   <div class="tab" id="tab4">
-    <h2>FILES</h2>
-
-    <div class="search-layout">
-
-      <div id="files"></div>
-
-      <div id="filePreview">
-        Select a file...
+    <div class="manager-layout">
+      <div class="manager-sidebar">
+        <div class="manager-header">
+          <span>Explorador de Arquivos</span>
+          <button onclick="loadFiles()" style="background:none; border:none; color:#4ea1ff; cursor:pointer;">⟳</button>
+        </div>
+        <div id="files" class="manager-list">
+          <!-- Lista de arquivos será renderizada aqui -->
+        </div>
       </div>
-
+      <div class="manager-main">
+        <div class="manager-header" id="fileNameDisplay">Visualização do Documento</div>
+        <div id="filePreview" class="manager-preview">
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#8aa0b5;">
+            <span style="font-size:48px;">📄</span>
+            <p>Selecione um arquivo para visualizar o conteúdo</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ================= SEARCH ================= -->
+  <!-- ================= SEARCH (INTELLIGENT MODES) ================= -->
   <div class="tab" id="tab5">
-
-    <h2>SEARCH</h2>
-
-    <div class="search-toolbar">
-      <input id="searchInput" placeholder="Search artifacts..." />
-
-      <button onclick="mockSearch()">Search</button>
-      <button onclick="mockSummarize()">Resumir</button>
-      <button onclick="mockEnrich()">Enriquecer</button>
-    </div>
-
-    <div class="search-actions">
-      <label class="select-all">
-        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-        Select All
-      </label>
-
-      <button onclick="downloadSelected()">Download</button>
-    </div>
-
-    <div class="search-layout">
-
-      <div id="searchResults"></div>
-
-      <div id="searchPreview">
-        Select artifact...
+    <div class="manager-layout">
+      <div class="manager-sidebar">
+        <div class="manager-header">Busca Inteligente</div>
+        <div class="search-modes">
+          <button onclick="setSearchMode('DEFAULT')" class="btn-mode active" id="modeDefault">PADRÃO</button>
+          <button onclick="setSearchMode('RESUMO')" class="btn-mode" id="modeResumo">RESUMO</button>
+          <button onclick="setSearchMode('ENRICH')" class="btn-mode" id="modeEnrich">ENRICH</button>
+        </div>
+        <div style="padding:15px; border-bottom:1px solid #1f2a3a;">
+          <input id="searchInput" placeholder="O que você procura?">
+          <button onclick="performSearch()" style="width:100%; margin-top:10px; background:#4ea1ff; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold;">Pesquisar</button>
+        </div>
+        <div id="searchResults" class="manager-list">
+          <!-- Resultados da busca -->
+        </div>
       </div>
-
+      <div class="manager-main">
+        <div class="manager-header">Painel de Resultados / Relatório</div>
+        <div id="searchPreview" class="manager-preview">
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#8aa0b5;">
+            <span style="font-size:48px;">🔍</span>
+            <p>Aguardando pesquisa...</p>
+          </div>
+        </div>
+      </div>
     </div>
-
   </div>
 
   <!-- ================= PROFILE ================= -->
   <div class="tab" id="tab6">
-
-    <h2>Profile</h2>
-
-    <div class="profile-grid">
-
-      <input id="p_username" disabled placeholder="username">
-
-      <input id="p_name" placeholder="full name">
-      <input id="p_email" placeholder="email">
-      <input id="p_tel" placeholder="phone">
-
-      <input id="p_company" placeholder="company">
-      <input id="p_role" placeholder="role">
-
-      <input id="p_pass" type="password" placeholder="password">
-
+    <div class="profile-container">
+      <h2 style="margin-top: 0;">Meu Perfil</h2>
+      <div class="profile-grid">
+        <div>
+          <label>Nome de Usuário</label>
+          <input id="p_username" disabled style="opacity:0.6;">
+        </div>
+        <div>
+          <label>Nome Completo</label>
+          <input id="p_name" placeholder="Seu nome">
+        </div>
+        <div>
+          <label>E-mail</label>
+          <input id="p_email" placeholder="seu@email.com">
+        </div>
+        <div>
+          <label>Telefone</label>
+          <input id="p_tel" placeholder="(00) 00000-0000">
+        </div>
+        <div>
+          <label>Empresa</label>
+          <input id="p_company" placeholder="Nome da empresa">
+        </div>
+        <div>
+          <label>Cargo</label>
+          <input id="p_role" placeholder="Seu cargo">
+        </div>
+        <div style="grid-column: span 2;">
+          <label>Alterar Senha</label>
+          <input id="p_pass" type="password" placeholder="Digite a nova senha apenas se desejar alterar">
+        </div>
+      </div>
+      <button onclick="saveProfile()" style="margin-top:30px; background:#4ea1ff; color:white; border:none; padding:15px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%; font-size:16px;">Salvar Alterações</button>
+      <div id="profile_msg" style="text-align:center; margin-top:15px;"></div>
     </div>
-
-    <button onclick="saveProfile()">Save</button>
-
-    <div id="profile_msg"></div>
-
   </div>
 
   <!-- ================= REGISTER ================= -->
   <div class="tab" id="tab7">
-
-    <h2>Create Account</h2>
-
-    <input id="reg_name" placeholder="Full name">
-    <input id="reg_email" placeholder="Email">
-    <input id="reg_tel" placeholder="Phone">
-
-    <input id="reg_pass" type="password" placeholder="Password">
-    <input id="reg_pass2" type="password" placeholder="Confirm Password">
-
-    <button onclick="registerUser()">Create</button>
-
-    <div id="reg_msg"></div>
-
-  </div>
-<!-- ================= FOOTER ================= -->
-  <footer class="footer">
-
-    <img class="logo"
-      src="https://www.meshwave.com.br/assets/meshwave_logo_nova-C_vq8StO.png"
-    />
-
-    <div>
-      <div class="t10">MeshWave Cyber Technologies ®</div>
-
-      <div class="t8">
-        Centro Empresarial Mourisco<br>
-        Praia de Botafogo, 501 - 2º andar - Torre Rio Sul<br>
-
-        <a href="https://www.meshwave.com.br">www.meshwave.com.br</a> |
-        <a href="mailto:info@meshwave.com.br">info@meshwave.com.br</a><br>
-
-        <a href="https://wa.me/351914845439">WhatsApp PT</a> |
-        <a href="https://wa.me/5521972341965">WhatsApp BR</a>
+    <div style="max-width: 500px; margin: 50px auto; background: #0e141d; padding: 30px; border-radius: 12px; border: 1px solid #1f2a3a;">
+      <h2 style="margin-top: 0;">Criar Nova Conta</h2>
+      <label>Nome Completo *</label>
+      <input id="reg_name" placeholder="Seu nome">
+      <label>E-mail *</label>
+      <input id="reg_email" placeholder="seu@email.com">
+      <label>Username (Opcional)</label>
+      <input id="reg_username" placeholder="usuario_desejado">
+      <label>Invite Code *</label>
+      <input id="reg_code" placeholder="Código de convite obrigatório">
+      <label>Senha *</label>
+      <input id="reg_pass" type="password" placeholder="Mínimo 6 caracteres">
+      <label>Confirmar Senha *</label>
+      <input id="reg_pass2" type="password" placeholder="Repita a senha">
+      <div style="display: flex; gap: 10px; margin-top: 25px;">
+        <button onclick="registerUser()" style="flex: 2; background: #4ea1ff; color: white; border: none; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">Finalizar Cadastro</button>
+        <button onclick="showTab(1)" style="flex: 1; background: #1a2433; color: #cfd6e4; border: 1px solid #263447; padding: 14px; border-radius: 6px; cursor: pointer; font-weight: bold;">Voltar</button>
       </div>
+      <div id="reg_msg" style="text-align:center; margin-top:15px; font-size:12px;"></div>
     </div>
+  </div>
 
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <img src="https://www.meshwave.com.br/assets/meshwave_logo_nova-C_vq8StO.png" />
+    <div class="footer-text">
+      <b>MeshWave Cyber Technologies ®</b><br>
+      Centro Empresarial Mourisco - Botafogo, RJ | <a href="https://www.meshwave.com.br" style="color:#4ea1ff; text-decoration:none;">www.meshwave.com.br</a>
+    </div>
   </footer>
 
   <script type="module" src="/src/main.js"></script>
-
 </body>
 </html>

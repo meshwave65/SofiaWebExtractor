@@ -3,86 +3,20 @@
 import "./styles.css";
 import { supabase } from "./lib/supabase";
 
+const MESH_WAVE_UUID = "7891b8f4-68cc-4344-89e1-c000b80918bb";
+
 // ======================
 // STATE
 // ======================
-let USER = {
-  id: null,
-  user_name: "guest",
-  full_name: "Guest User",
-  email: null
-};
-
-let SESSION = {
-  logged: false
-};
-
-let CLIENT = {
-  client_uuid: null,
-  user_name: "",
-  full_name: "",
-  email: "",
-  tel1: "",
-  password: ""
-};
-
-// TASK STATE
+let USER = { id: null, user_name: "guest", full_name: "Guest User", email: null };
+let SESSION = { logged: false };
 let TASKS = [];
-let TASK_FILTER = {
-  status: "ALL",
-  llm: "ALL",
-  agent: "ALL"
-};
-
 let TASK_SELECTION = new Set();
-
-// FILES STATE (FIX CRÍTICO)
 let FILES_DATA = [];
+let SEARCH_MODE = "DEFAULT"; // DEFAULT, RESUMO, ENRICH
 
 // ======================
-// LLM PROVIDER
-// ======================
-function extractLLMProvider(url = "") {
-  if (!url || typeof url !== "string") return "unknown";
-
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-
-    if (host.includes("manus.im")) return "manus";
-    if (host.includes("chatgpt.com")) return "chatgpt";
-    if (host.includes("grok.com")) return "grok";
-    if (host.includes("perplexity.ai")) return "perplexity";
-    if (host.includes("claude.ai")) return "claude";
-  } catch {}
-
-  const u = url.toLowerCase();
-
-  if (u.includes("manus")) return "manus";
-  if (u.includes("chatgpt")) return "chatgpt";
-  if (u.includes("grok")) return "grok";
-  if (u.includes("perplexity")) return "perplexity";
-  if (u.includes("claude")) return "claude";
-
-  return "unknown";
-}
-
-// ======================
-// SLUG
-// ======================
-function extractSlugFromUrl(url) {
-  if (!url) return null;
-
-  try {
-    const clean = url.split("?")[0].split("#")[0];
-    const parts = clean.split("/").filter(Boolean);
-    return parts[parts.length - 1] || null;
-  } catch {
-    return null;
-  }
-}
-
-// ======================
-// TAB
+// HELPERS
 // ======================
 function showTab(n) {
   document.querySelectorAll(".tab").forEach(t => (t.style.display = "none"));
@@ -90,50 +24,58 @@ function showTab(n) {
   if (el) el.style.display = "block";
 }
 
+function getStatusIcon(status) {
+  const s = (status || "").toUpperCase();
+  if (s === "STAGED") return "📦";
+  if (s === "DONE") return "🏁";
+  if (s === "DELETED") return "🗑️";
+  if (s === "PROCESS" || s === "PROCESSING") return "⚙️";
+  if (s === "FAIL" || s === "FAILED") return "🚨";
+  if (s === "PAUSE" || s === "PAUSED") return "⏸️";
+  return "❓";
+}
+
+function getStatusClass(status) {
+  const s = (status || "").toUpperCase();
+  if (s === "STAGED") return "status-staged";
+  if (s === "PROCESS" || s === "PROCESSING") return "status-process";
+  if (s === "DONE") return "status-done";
+  if (s === "FAIL" || s === "FAILED") return "status-fail";
+  if (s === "PAUSE" || s === "PAUSED") return "status-pause";
+  return "status-staged";
+}
+
 // ======================
-// LOGIN
+// AUTH
 // ======================
 async function login() {
-  const identifier = document.getElementById("login_email")?.value;
+  const identifier = document.getElementById("login_email")?.value?.trim();
   const password = document.getElementById("login_pass")?.value;
-
-  if (!identifier || !password) {
-    alert("Fill login fields");
-    return;
-  }
+  if (!identifier || !password) { alert("Preencha os campos"); return; }
 
   const { data: client, error: clientError } = await supabase
     .from("clients")
     .select("*")
-    .or(`email.eq.${identifier},user_name.eq.${identifier}`)
-    .single();
+    .or(`email.eq."${identifier}",user_name.eq."${identifier}"`)
+    .maybeSingle();
 
-  if (clientError || !client) {
-    alert("User not found");
-    return;
-  }
+  if (clientError || !client) { alert("Usuário não encontrado"); return; }
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email: client.email,
     password
   });
 
-  if (error || !data?.user) {
-    alert("Auth failed");
-    return;
-  }
+  if (error || !data?.user) { alert("Falha na autenticação"); return; }
 
   SESSION.logged = true;
-
-  USER = {
-    id: data.user.id,
-    user_name: client.user_name,
-    full_name: client.full_name || client.user_name,
-    email: client.email
-  };
-
-  const el = document.getElementById("fullName");
-  if (el) el.innerText = USER.full_name;
+  USER = { id: data.user.id, user_name: client.user_name, full_name: client.full_name, email: client.email };
+  
+  // Preencher Profile
+  document.getElementById("p_username").value = USER.user_name;
+  document.getElementById("p_name").value = USER.full_name || "";
+  document.getElementById("p_email").value = USER.email || "";
+  document.getElementById("taskUserName").innerText = USER.user_name;
 
   showTab(3);
   loadTasks();
@@ -144,316 +86,150 @@ async function login() {
 // TASKS
 // ======================
 async function loadTasks() {
-  if (!SESSION.logged || !USER.id) return;
-
-  const { data, error } = await supabase
-    .from("appsofia_tasks")
-    .select("*")
-    .eq("session_user_id", USER.id)
-    .order("created_at", { ascending: false });
-
+  if (!SESSION.logged) return;
+  const { data, error } = await supabase.from("appsofia_tasks").select("*").eq("session_user_id", USER.id).order("created_at", { ascending: false });
   if (error) return;
-
-  TASKS = (data || []).map(t => ({
-    ...t,
-    llm_provider: t.llm_provider || extractLLMProvider(t.full_url)
-  }));
-
+  TASKS = data || [];
   renderTasks();
-  renderTaskToolbar();
 }
 
-// ======================
-// INSERT TASK - DIRETO NO SUPABASE (Sem usar backend)
-// ======================
-async function insertTask() {
-  // Captura os valores dos inputs da aba Insert
-  const agentSelect = document.querySelector("#tab2 select")?.value || "meshwave65";
-  const agentOverride = document.querySelector("#tab2 input[placeholder='agent override']")?.value?.trim();
-  const linkInput = document.querySelector("#tab2 input[placeholder='https://...']");
-  const link = linkInput ? linkInput.value.trim() : "";
-
-  if (!link) {
-    alert("❌ O link (URL) é obrigatório!");
-    return;
-  }
-
-  if (!SESSION.logged || !USER.id) {
-    alert("❌ Você precisa estar logado para inserir uma task.");
-    showTab(1);
-    return;
-  }
-
-  const slug = extractSlugFromUrl(link);
-  const llm_provider = extractLLMProvider(link);
-
-  const payload = {
-    user_name: USER.user_name,
-    agente: agentOverride || agentSelect,
-    full_url: link,
-    session_user_id: USER.id,
-    slug: slug,
-    llm_provider: llm_provider,
-    status: "STAGED"
-  };
-
-  console.log("🔄 Tentando inserir no Supabase:", payload);
-
-  // === INSERT DIRETO NO SUPABASE ===
-  const { data, error } = await supabase
-    .from("appsofia_tasks")
-    .insert([payload])
-    .select();
-
-  if (error) {
-    console.error("❌ Erro ao inserir task:", error);
-    alert("Erro ao salvar no banco:\n" + (error.message || error));
-    return;
-  }
-
-  console.log("✅ Task inserida com sucesso:", data);
-  alert("✅ Task inserida com sucesso!");
-
-  // Limpa os campos após inserir
-  if (linkInput) linkInput.value = "";
-  const overrideInput = document.querySelector("#tab2 input[placeholder='agent override']");
-  if (overrideInput) overrideInput.value = "";
-
-  loadTasks();        // Atualiza a lista de tasks automaticamente
-}
-
-// ======================
-// TOOLBAR (NOVA UI)
-// ======================
-function renderTaskToolbar() {
-  const container = document.getElementById("taskToolbar");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="task-toolbar">
-      <button class="primary" onclick="runAction('PLAY')">▶ Play</button>
-      <button onclick="runAction('PAUSE')">⏸ Pause</button>
-      <button onclick="runAction('DELETE')">🗑 Delete</button>
-      <button class="refresh" onclick="loadTasks()">⟳ Refresh</button>
-    </div>
-  `;
-}
-
-// ======================
-// TASK RENDER
-// ======================
 function renderTasks() {
   const container = document.getElementById("tasks");
   if (!container) return;
-
   container.innerHTML = "";
-
   TASKS.forEach(t => {
     const row = document.createElement("div");
     row.className = "task-row";
-
-    const checked = TASK_SELECTION.has(t.id);
-    const status = (t.status || "STAGED").toUpperCase();
-
+    const extStatus = t.extractor_status || t.status || "STAGED";
+    const dwnStatus = t.downloader_status || t.status || "STAGED";
     row.innerHTML = `
-      <div class="task-check">
-        <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleTask('${t.id}')">
-      </div>
-
-      <div class="task-icon">
-        ${renderStatusIcon(status)}
-      </div>
-
+      <div style="display:flex; justify-content:center;"><input type="checkbox" onchange="toggleTaskSelection(${t.id}, this)"></div>
+      <div class="task-icon" style="text-align:center;">${getStatusIcon(extStatus)}</div>
       <div class="task-content">
-        <div class="task-id">${t.slug || t.id}</div>
+        <div class="task-id">${t.id}</div>
         <div class="task-llm">${t.llm_provider || "unknown"}</div>
-        <div class="task-url">${t.full_url || ""}</div>
+        <div class="task-url">${t.full_url}</div>
       </div>
-
-      <div class="task-status status-${status}">
-        ${status}
-      </div>
+      <div style="display:flex; justify-content:center;"><div class="task-status-btn ${getStatusClass(extStatus)}">${extStatus}</div></div>
+      <div style="display:flex; justify-content:center;"><div class="task-status-btn ${getStatusClass(dwnStatus)}">${dwnStatus}</div></div>
     `;
-
     container.appendChild(row);
   });
 }
 
-// ======================
-// STATUS ICONS
-// ======================
-function renderStatusIcon(status) {
-  switch ((status || "").toUpperCase()) {
-    case "PROCESS":
-      return "⚙️";
-    case "PAUSED":
-      return "⏸️";
-    case "STAGED":
-      return "🟡";
-    case "DONE":
-      return "🏁";
-    case "FAIL":
-      return "🚨";
-    case "DELETED":
-      return "🗑️";
-    default:
-      return "•";
-  }
+function toggleTaskSelection(id, cb) { if (cb.checked) TASK_SELECTION.add(id); else TASK_SELECTION.delete(id); }
+
+async function insertTask() {
+  const url = document.getElementById("task_url").value.trim();
+  if (!url) { alert("URL obrigatória"); return; }
+  const payload = {
+    user_name: USER.user_name,
+    agente: document.getElementById("agent_override").value || document.getElementById("insert_agent").value,
+    full_url: url,
+    session_user_id: USER.id,
+    owner_user_id: MESH_WAVE_UUID,
+    status: "STAGED"
+  };
+  const { error } = await supabase.from("appsofia_tasks").insert([payload]);
+  if (error) alert(error.message);
+  else { alert("Sucesso!"); loadTasks(); }
 }
 
 // ======================
-// FILES (FIX DEFINITIVO)
+// FILES MANAGER
 // ======================
 async function loadFiles() {
-  if (!USER.user_name || USER.user_name === "guest") return;
-
-  const API_BASE = "https://appsofia.meshwave.com.br";
-
+  if (!USER.user_name) return;
   try {
-    const resp = await fetch(`${API_BASE}/files?user_name=${USER.user_name}`);
+    const resp = await fetch(`https://appsofia.meshwave.com.br/files?user_name=${USER.user_name}`);
     const json = await resp.json();
-
     FILES_DATA = json?.data?.providers || [];
     renderFiles();
-
-  } catch (err) {
-    console.error("Erro ao carregar arquivos:", err);
-    FILES_DATA = [];
-    renderFiles();
-  }
+  } catch (err) { console.error(err); }
 }
 
-// ======================
-// RENDER FILES (mantém o que já estava bom)
-// ======================
 function renderFiles() {
   const container = document.getElementById("files");
   if (!container) return;
-
   container.innerHTML = "";
-
-  if (!FILES_DATA || FILES_DATA.length === 0) {
-    container.innerHTML = `<div style="padding:30px;color:#8aa0b5;text-align:center;">Nenhum arquivo encontrado</div>`;
-    return;
-  }
-
-  FILES_DATA.forEach(provider => {
-    const providerEl = document.createElement("div");
-    providerEl.className = "file-provider";
-    providerEl.textContent = `📁 ${provider.provider.toUpperCase()}`;
-    container.appendChild(providerEl);
-
-    (provider.tasks || []).forEach(task => {
-      const taskEl = document.createElement("div");
-      taskEl.className = "file-task";
-
-      const header = document.createElement("div");
-      header.className = "file-task-header";
-      header.innerHTML = `Task: <strong>${task.task_id}</strong> <span style="float:right; font-size:9px;">${task.files?.length || 0} arq.</span>`;
-      taskEl.appendChild(header);
-
-      (task.files || []).forEach(file => {
-        const row = document.createElement("div");
-        row.className = "file-row";
-
-        const isImage = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file.filename);
-
-        row.innerHTML = `
-          <div>${isImage ? '🖼️' : '📄'}</div>
-          <div class="filename">${file.filename}</div>
-        `;
-
-        row.onclick = () => previewFile(file);
-        taskEl.appendChild(row);
-      });
-
-      container.appendChild(taskEl);
-    });
+  FILES_DATA.forEach((file, index) => {
+    const item = document.createElement("div");
+    item.className = "manager-item";
+    item.onclick = () => previewFile(file, item);
+    item.innerHTML = `<span>📄</span> <div style="font-size:12px; overflow:hidden; text-overflow:ellipsis;">${file.filename || file.name}</div>`;
+    container.appendChild(item);
   });
 }
 
-// ======================
-// PREVIEW FILE + DOWNLOAD
-// ======================
-async function previewFile(file) {
-  const previewPanel = document.getElementById("filePreview");
-
-  previewPanel.innerHTML = `
-    <div class="preview-header">
-      <strong>${file.filename}</strong>
-      <button onclick="downloadFile('${encodeURIComponent(file.path)}')" class="download-btn">
-        ⬇️ Baixar
-      </button>
-    </div>
-    <div id="preview-content" class="preview-content">
-      Carregando...
-    </div>
-  `;
-
-  const contentArea = document.getElementById("preview-content");
-  const isImage = /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file.filename);
-
-  try {
-    const url = `/api/file?path=${encodeURIComponent(file.path)}`;
-
-    if (isImage) {
-      contentArea.innerHTML = `<img src="${url}" style="max-width:100%; height:auto;" alt="${file.filename}">`;
-    } else {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("Falha ao carregar");
-      const text = await resp.text();
-      contentArea.innerHTML = `<pre>${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`;
-    }
-  } catch (e) {
-    contentArea.innerHTML = `
-      <div style="color:#ff5c5c; padding:20px; text-align:center;">
-        Não foi possível carregar o preview.<br><br>
-        <button onclick="downloadFile('${encodeURIComponent(file.path)}')" class="download-btn">
-          ⬇️ Baixar Arquivo
-        </button>
-      </div>`;
+function previewFile(file, element) {
+  document.querySelectorAll(".manager-item").forEach(i => i.classList.remove("active"));
+  element.classList.add("active");
+  document.getElementById("fileNameDisplay").innerText = file.filename || file.name;
+  const preview = document.getElementById("filePreview");
+  const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(file.filename || file.name);
+  if (isImg) {
+    preview.innerHTML = `<img src="${file.url || file.path}" style="max-width:100%; border-radius:8px;">`;
+  } else {
+    preview.innerHTML = `<pre style="font-size:12px; color:#cfd6e4; white-space:pre-wrap;">${file.content || "Sem conteúdo para exibir"}</pre>`;
   }
 }
 
 // ======================
-// DOWNLOAD
+// SEARCH (3 MODES)
 // ======================
-function downloadFile(encodedPath) {
-  const a = document.createElement('a');
-  a.href = `/api/file?path=${encodedPath}&download=true`;
-  a.download = '';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+function setSearchMode(mode) {
+  SEARCH_MODE = mode;
+  document.querySelectorAll(".btn-mode").forEach(b => b.classList.remove("active"));
+  document.getElementById(`mode${mode.charAt(0).toUpperCase() + mode.slice(1).toLowerCase()}`).classList.add("active");
+  alert(`Modo de busca alterado para: ${mode}`);
 }
 
-
-
-// ======================
-// TASK SELECTION
-// ======================
-function toggleTask(id) {
-  if (TASK_SELECTION.has(id)) TASK_SELECTION.delete(id);
-  else TASK_SELECTION.add(id);
+async function performSearch() {
+  const query = document.getElementById("searchInput").value;
+  if (!query) return;
+  const preview = document.getElementById("searchPreview");
+  preview.innerHTML = `<div style="text-align:center; padding:50px;">🔍 Processando modo ${SEARCH_MODE}...</div>`;
+  
+  // Simulação de lógica por modo
+  setTimeout(() => {
+    if (SEARCH_MODE === "DEFAULT") {
+      preview.innerHTML = `<h3>Resultados para: ${query}</h3><p>Lista de artefatos encontrados na base de dados...</p>`;
+    } else if (SEARCH_MODE === "RESUMO") {
+      preview.innerHTML = `<h3>Resumo Inteligente (LLM)</h3><p>Baseado na sua busca por "${query}", aqui está o resumo organizado das informações...</p>`;
+    } else {
+      preview.innerHTML = `<h3>Relatório Enrich (IA + Fontes Externas)</h3><p>Relatório detalhado sobre "${query}" enriquecido com dados da web e bases externas...</p>`;
+    }
+  }, 1000);
 }
 
 // ======================
-// EXPORT
+// PROFILE
+// ======================
+async function saveProfile() {
+  const payload = {
+    full_name: document.getElementById("p_name").value,
+    email: document.getElementById("p_email").value,
+    tel1: document.getElementById("p_tel").value,
+    company: document.getElementById("p_company").value,
+    role: document.getElementById("p_role").value
+  };
+  const { error } = await supabase.from("clients").update(payload).eq("id", USER.id);
+  const msg = document.getElementById("profile_msg");
+  if (error) msg.innerHTML = `<span style="color:#ef4444;">Erro: ${error.message}</span>`;
+  else msg.innerHTML = `<span style="color:#4ade80;">Perfil atualizado com sucesso!</span>`;
+}
+
+// ======================
+// INIT
 // ======================
 window.showTab = showTab;
 window.login = login;
 window.loadTasks = loadTasks;
 window.loadFiles = loadFiles;
-window.toggleTask = toggleTask;
-window.insertTask = insertTask;     // ← Tem que ter esta linha
-window.runAction = (a) => console.log("ACTION:", a);
+window.insertTask = insertTask;
+window.setSearchMode = setSearchMode;
+window.performSearch = performSearch;
+window.saveProfile = saveProfile;
+window.toggleTaskSelection = (id, cb) => toggleTaskSelection(id, cb);
 
-// placeholder (UI only)
-window.runAction = (a) => console.log("ACTION:", a);
-
-// ======================
-// INIT
-// ======================
-document.addEventListener("DOMContentLoaded", () => {
-  showTab(1);
-});
+document.addEventListener("DOMContentLoaded", () => showTab(1));
