@@ -39,6 +39,19 @@ function extractSlugFromUrl(url) {
   } catch { return null; }
 }
 
+function extractLLMProvider(url = "") {
+  if (!url || typeof url !== "string") return "unknown";
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.includes("manus.im")) return "manus";
+    if (host.includes("chatgpt.com")) return "chatgpt";
+    if (host.includes("grok.com")) return "grok";
+    if (host.includes("perplexity.ai")) return "perplexity";
+    if (host.includes("claude.ai")) return "claude";
+  } catch {}
+  return "unknown";
+}
+
 function getStatusIcon(status) {
   const s = (status || "").toUpperCase();
   if (s === "STAGED") return "📦";
