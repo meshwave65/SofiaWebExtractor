@@ -4,6 +4,7 @@ import "./styles.css";
 import { supabase } from "./lib/supabase";
 
 const MESH_WAVE_UUID = "7891b8f4-68cc-4344-89e1-c000b80918bb";
+const API_BASE_URL = "https://appsofia.meshwave.com.br";
 
 // ======================
 // STATE
@@ -12,7 +13,12 @@ let USER = { id: null, user_name: "guest", full_name: "Guest User", email: null 
 let SESSION = { logged: false };
 let TASKS = [];
 let TASK_SELECTION = new Set();
-let FILES_DATA = [];
+
+// Estado do File Manager
+let FILES_DATA = []; 
+let FILE_NAV_PATH = []; 
+let SELECTED_FILE = null;
+
 let SEARCH_MODE = "DEFAULT"; // DEFAULT, RESUMO, ENRICH
 
 // ======================
@@ -46,7 +52,7 @@ function getStatusClass(status) {
 }
 
 // ======================
-// AUTH
+// AUTH & LOGIN
 // ======================
 async function login() {
   const identifier = document.getElementById("login_email")?.value?.trim();
@@ -71,7 +77,6 @@ async function login() {
   SESSION.logged = true;
   USER = { id: data.user.id, user_name: client.user_name, full_name: client.full_name, email: client.email };
   
-  // Preencher Profile
   document.getElementById("p_username").value = USER.user_name;
   document.getElementById("p_name").value = USER.full_name || "";
   document.getElementById("p_email").value = USER.email || "";
@@ -80,6 +85,84 @@ async function login() {
   showTab(3);
   loadTasks();
   loadFiles();
+}
+
+// ======================
+// REGISTER USER
+// ======================
+async function registerUser() {
+  const name = document.getElementById("reg_name")?.value?.trim();
+  const email = document.getElementById("reg_email")?.value?.trim();
+  const customUsername = document.getElementById("reg_username")?.value?.trim();
+  const code = document.getElementById("reg_code")?.value?.trim()?.toUpperCase();
+  const pass = document.getElementById("reg_pass")?.value;
+  const pass2 = document.getElementById("reg_pass2")?.value;
+
+  const msg = document.getElementById("reg_msg");
+  if (msg) msg.innerText = "";
+
+  if (!name || !email || !code || !pass || !pass2) {
+    if (msg) msg.innerText = "Preencha todos os campos obrigatórios";
+    return;
+  }
+
+  if (pass !== pass2) {
+    if (msg) msg.innerText = "Senhas não conferem";
+    return;
+  }
+
+  const username = customUsername || email.split("@")[0];
+
+  // 1. Verificar convite
+  const { data: invite, error: inviteError } = await supabase
+    .from("invites_dev")
+    .select("*")
+    .eq("code", code)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (inviteError || !invite) {
+    if (msg) msg.innerText = "Código de convite inválido ou já utilizado";
+    return;
+  }
+
+  // 2. Inserir na tabela de usuários (clients)
+  const { data: userInsert, error: userError } = await supabase
+    .from("clients")
+    .insert([{
+      client_id: Date.now(),
+      user_name: username,
+      email: email,
+      full_name: name,
+      owner_user_id: MESH_WAVE_UUID
+    }])
+    .select()
+    .maybeSingle();
+
+  if (userError || !userInsert) {
+    if (msg) msg.innerText = `Erro ao criar perfil: ${userError?.message}`;
+    return;
+  }
+
+  // 3. Criar Auth User
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password: pass
+  });
+
+  if (authError || !authData?.user) {
+    if (msg) msg.innerText = "Erro ao criar conta no Auth";
+    return;
+  }
+
+  // 4. Atualizar vínculo e queimar convite
+  await Promise.all([
+    supabase.from("clients").update({ owner_user_id: authData.user.id }).eq("client_uuid", userInsert.client_uuid),
+    supabase.from("invites_dev").update({ status: "used" }).eq("code", code)
+  ]);
+
+  if (msg) msg.innerText = "Usuário criado com sucesso! Faça login.";
+  setTimeout(() => showTab(1), 2000);
 }
 
 // ======================
@@ -136,14 +219,15 @@ async function insertTask() {
 }
 
 // ======================
-// FILES MANAGER
+// FILES MANAGER (Hierárquico)
 // ======================
 async function loadFiles() {
   if (!USER.user_name) return;
   try {
-    const resp = await fetch(`https://appsofia.meshwave.com.br/files?user_name=${USER.user_name}`);
+    const resp = await fetch(`${API_BASE_URL}/files?user_name=${USER.user_name}`);
     const json = await resp.json();
     FILES_DATA = json?.data?.providers || [];
+    FILE_NAV_PATH = [{ type: 'root', name: 'Knowledge' }];
     renderFiles();
   } catch (err) { console.error(err); }
 }
@@ -152,36 +236,100 @@ function renderFiles() {
   const container = document.getElementById("files");
   if (!container) return;
   container.innerHTML = "";
-  FILES_DATA.forEach((file, index) => {
-    const item = document.createElement("div");
-    item.className = "manager-item";
-    item.onclick = () => previewFile(file, item);
-    item.innerHTML = `<span>📄</span> <div style="font-size:12px; overflow:hidden; text-overflow:ellipsis;">${file.filename || file.name}</div>`;
-    container.appendChild(item);
-  });
-}
 
-function previewFile(file, element) {
-  document.querySelectorAll(".manager-item").forEach(i => i.classList.remove("active"));
-  element.classList.add("active");
-  document.getElementById("fileNameDisplay").innerText = file.filename || file.name;
-  const preview = document.getElementById("filePreview");
-  const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(file.filename || file.name);
-  if (isImg) {
-    preview.innerHTML = `<img src="${file.url || file.path}" style="max-width:100%; border-radius:8px;">`;
-  } else {
-    preview.innerHTML = `<pre style="font-size:12px; color:#cfd6e4; white-space:pre-wrap;">${file.content || "Sem conteúdo para exibir"}</pre>`;
+  if (FILE_NAV_PATH.length > 1) {
+    const back = document.createElement("div");
+    back.className = "manager-item back-item";
+    back.onclick = goBack;
+    back.innerHTML = `<span>⬅️</span> <div style="font-weight:bold;">Voltar</div>`;
+    container.appendChild(back);
+  }
+
+  const currentLevel = FILE_NAV_PATH[FILE_NAV_PATH.length - 1];
+
+  if (currentLevel.type === 'root') {
+    FILES_DATA.forEach(p => {
+      const item = document.createElement("div");
+      item.className = "manager-item folder-item";
+      item.onclick = () => {
+        FILE_NAV_PATH.push({ type: 'provider', name: p.provider, data: p });
+        renderFiles();
+      };
+      item.innerHTML = `<span>📁</span> <div>${p.provider.toUpperCase()}</div>`;
+      container.appendChild(item);
+    });
+  } 
+  else if (currentLevel.type === 'provider') {
+    currentLevel.data.tasks.forEach(t => {
+      const item = document.createElement("div");
+      item.className = "manager-item folder-item";
+      item.onclick = () => {
+        FILE_NAV_PATH.push({ type: 'task', name: t.task_id, data: t });
+        renderFiles();
+      };
+      item.innerHTML = `<span>📂</span> <div style="font-size:10px; word-break:break-all;">${t.task_id}</div>`;
+      container.appendChild(item);
+    });
+  }
+  else if (currentLevel.type === 'task') {
+    currentLevel.data.files.forEach(f => {
+      const item = document.createElement("div");
+      item.className = "manager-item file-item";
+      if (SELECTED_FILE && SELECTED_FILE.path === f.path) item.classList.add("active");
+      item.onclick = () => previewFile(f, item);
+      item.innerHTML = `<span>📄</span> <div style="font-size:11px; overflow:hidden; text-overflow:ellipsis;">${f.filename}</div>`;
+      container.appendChild(item);
+    });
   }
 }
 
+function goBack() {
+  FILE_NAV_PATH.pop();
+  renderFiles();
+}
+
+async function previewFile(file, element) {
+  SELECTED_FILE = file;
+  document.querySelectorAll(".manager-item").forEach(i => i.classList.remove("active"));
+  element.classList.add("active");
+  
+  const header = document.getElementById("fileNameDisplay");
+  header.innerHTML = `
+    <span>${file.filename}</span>
+    <button onclick="downloadFile('${file.path}')" style="background:#4ea1ff; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:11px;">Download</button>
+  `;
+
+  const preview = document.getElementById("filePreview");
+  preview.innerHTML = `<div style="text-align:center; padding:50px;">⌛ Carregando...</div>`;
+
+  try {
+    const fileUrl = `${API_BASE_URL}/api/file?path=${encodeURIComponent(file.path)}`;
+    const isImg = /\.(png|jpg|jpeg|gif|webp)$/i.test(file.filename);
+
+    if (isImg) {
+      preview.innerHTML = `<img src="${fileUrl}" style="max-width:100%; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">`;
+    } else {
+      const resp = await fetch(fileUrl);
+      const text = await resp.text();
+      preview.innerHTML = `<pre style="font-size:12px; color:#cfd6e4; white-space:pre-wrap; background:#111826; padding:15px; border-radius:8px; border:1px solid #1f2a3a;">${text || "Arquivo vazio"}</pre>`;
+    }
+  } catch (err) {
+    preview.innerHTML = `<div style="color:#ef4444; padding:20px;">Erro ao carregar arquivo: ${err.message}</div>`;
+  }
+}
+
+window.downloadFile = function(path) {
+  const downloadUrl = `${API_BASE_URL}/api/file?path=${encodeURIComponent(path)}&download=true`;
+  window.open(downloadUrl, '_blank');
+};
+
 // ======================
-// SEARCH (3 MODES)
+// SEARCH & PROFILE
 // ======================
 function setSearchMode(mode) {
   SEARCH_MODE = mode;
   document.querySelectorAll(".btn-mode").forEach(b => b.classList.remove("active"));
   document.getElementById(`mode${mode.charAt(0).toUpperCase() + mode.slice(1).toLowerCase()}`).classList.add("active");
-  alert(`Modo de busca alterado para: ${mode}`);
 }
 
 async function performSearch() {
@@ -189,22 +337,11 @@ async function performSearch() {
   if (!query) return;
   const preview = document.getElementById("searchPreview");
   preview.innerHTML = `<div style="text-align:center; padding:50px;">🔍 Processando modo ${SEARCH_MODE}...</div>`;
-  
-  // Simulação de lógica por modo
   setTimeout(() => {
-    if (SEARCH_MODE === "DEFAULT") {
-      preview.innerHTML = `<h3>Resultados para: ${query}</h3><p>Lista de artefatos encontrados na base de dados...</p>`;
-    } else if (SEARCH_MODE === "RESUMO") {
-      preview.innerHTML = `<h3>Resumo Inteligente (LLM)</h3><p>Baseado na sua busca por "${query}", aqui está o resumo organizado das informações...</p>`;
-    } else {
-      preview.innerHTML = `<h3>Relatório Enrich (IA + Fontes Externas)</h3><p>Relatório detalhado sobre "${query}" enriquecido com dados da web e bases externas...</p>`;
-    }
+    preview.innerHTML = `<h3>Resultado (${SEARCH_MODE})</h3><p>Informações sobre "${query}" processadas com sucesso.</p>`;
   }, 1000);
 }
 
-// ======================
-// PROFILE
-// ======================
 async function saveProfile() {
   const payload = {
     full_name: document.getElementById("p_name").value,
@@ -215,8 +352,8 @@ async function saveProfile() {
   };
   const { error } = await supabase.from("clients").update(payload).eq("id", USER.id);
   const msg = document.getElementById("profile_msg");
-  if (error) msg.innerHTML = `<span style="color:#ef4444;">Erro: ${error.message}</span>`;
-  else msg.innerHTML = `<span style="color:#4ade80;">Perfil atualizado com sucesso!</span>`;
+  if (error) msg.innerHTML = `<span style="color:#ef4444;">Erro ao salvar</span>`;
+  else msg.innerHTML = `<span style="color:#4ade80;">Salvo!</span>`;
 }
 
 // ======================
@@ -224,6 +361,7 @@ async function saveProfile() {
 // ======================
 window.showTab = showTab;
 window.login = login;
+window.registerUser = registerUser;
 window.loadTasks = loadTasks;
 window.loadFiles = loadFiles;
 window.insertTask = insertTask;
@@ -231,5 +369,6 @@ window.setSearchMode = setSearchMode;
 window.performSearch = performSearch;
 window.saveProfile = saveProfile;
 window.toggleTaskSelection = (id, cb) => toggleTaskSelection(id, cb);
+window.openRegister = () => showTab(7);
 
 document.addEventListener("DOMContentLoaded", () => showTab(1));
