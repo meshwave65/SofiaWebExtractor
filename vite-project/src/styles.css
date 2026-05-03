@@ -37,12 +37,12 @@ body {
 .tab {
   display: none;
   padding: 20px;
-  height: calc(100vh - 120px); /* Descontando nav e footer */
+  height: calc(100vh - 120px);
   overflow-y: auto;
   box-sizing: border-box;
 }
 
-/* ================= INPUTS & LABELS ================= */
+/* ================= INPUTS ================= */
 label {
   display: block;
   font-size: 11px;
@@ -70,7 +70,7 @@ input:focus {
   box-shadow: 0 0 8px rgba(78, 161, 255, 0.2);
 }
 
-/* ================= BOTÕES GLOSSY 3D ================= */
+/* ================= BOTÕES ================= */
 .task-toolbar {
   display: flex;
   align-items: center;
@@ -92,7 +92,9 @@ input:focus {
   font-size: 20px;
   color: white;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,0.3);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4),
+              inset 0 -3px 6px rgba(0,0,0,0.3),
+              inset 0 3px 6px rgba(255,255,255,0.3);
   transition: all 0.2s ease;
 }
 
@@ -100,20 +102,25 @@ input:focus {
   content: "";
   position: absolute;
   top: 2px;
-  left: 50%; transform: translateX(-50%);
-  width: 70%; height: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 40%;
   background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
   border-radius: 50% 50% 40% 40%;
 }
 
-.btn-glossy:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.5); }
+.btn-glossy:hover {
+  transform: translateY(-2px);
+}
+
 .btn-play { background: radial-gradient(circle, #4ade80, #166534); }
 .btn-pause { background: radial-gradient(circle, #fbbf24, #92400e); }
 .btn-stop { background: radial-gradient(circle, #ef4444, #991b1b); }
 .btn-delete { background: radial-gradient(circle, #6b7280, #374151); }
 .btn-refresh { background: radial-gradient(circle, #3b82f6, #1e40af); }
 
-/* ================= TASKS TABLE ================= */
+/* ================= TASKS ================= */
 .task-row {
   display: grid;
   grid-template-columns: 40px 50px 1fr 110px 110px;
@@ -138,18 +145,18 @@ input:focus {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-.status-staged { background: #2b3442; color: #cfd6e4; }
-.status-process { background: #1e4ed8; color: white; }
-.status-done { background: #16a34a; color: white; }
-.status-fail { background: #dc2626; color: white; }
-.status-pause { background: #f59e0b; color: white; }
+.status-staged { background: #2b3442; }
+.status-process { background: #1e4ed8; }
+.status-done { background: #16a34a; }
+.status-fail { background: #dc2626; }
+.status-pause { background: #f59e0b; }
 
-/* ================= FILE MANAGER & SEARCH LAYOUT ================= */
+/* ================= FILE MANAGER ================= */
 .manager-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 20px;
-  height: 100%;
+  height: calc(100vh - 120px);
 }
 
 .manager-sidebar {
@@ -168,6 +175,7 @@ input:focus {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 
 .manager-header {
@@ -178,7 +186,6 @@ input:focus {
   font-size: 14px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
 .manager-list {
@@ -194,29 +201,55 @@ input:focus {
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.2s;
   margin-bottom: 5px;
   border: 1px solid transparent;
 }
 
 .manager-item:hover {
-  background: rgba(78, 161, 255, 0.1);
-  border-color: rgba(78, 161, 255, 0.3);
+  background: rgba(78,161,255,0.1);
+  border-color: rgba(78,161,255,0.3);
 }
 
 .manager-item.active {
-  background: rgba(78, 161, 255, 0.2);
+  background: rgba(78,161,255,0.2);
   border-color: #4ea1ff;
 }
 
+/* ================= FIX PREVIEW (AGORA CORRETO) ================= */
 .manager-preview {
   flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  height: 100%;
+}
+
+/* PDF / iframe FULL SCREEN */
+.manager-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* IMAGE FULL CONTROL */
+.manager-preview img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* TEXT FILES */
+.manager-preview pre {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 15px;
   background: #0b0f14;
 }
 
-/* ================= SEARCH SPECIFIC ================= */
+/* ================= SEARCH ================= */
 .search-modes {
   display: flex;
   gap: 10px;
@@ -235,13 +268,13 @@ input:focus {
   cursor: pointer;
   font-weight: bold;
   font-size: 12px;
-  transition: 0.2s;
 }
 
-.btn-mode:hover { border-color: #4ea1ff; color: #fff; }
-.btn-mode.active { background: #4ea1ff; color: #fff; border-color: #4ea1ff; }
+.btn-mode.active {
+  background: #4ea1ff;
+}
 
-/* ================= PROFILE LAYOUT ================= */
+/* ================= PROFILE ================= */
 .profile-container {
   max-width: 800px;
   margin: 0 auto;
@@ -270,3 +303,20 @@ input:focus {
 
 .footer img { width: 60px; }
 .footer-text { font-size: 11px; color: #8aa0b5; }
+
+/* ================= TREE FONT IMPROVEMENT ================= */
+
+.manager-item {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.manager-header {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}

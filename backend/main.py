@@ -6,6 +6,7 @@ import os
 import uuid
 from pathlib import Path
 from fastapi.responses import FileResponse
+
 app = FastAPI()
 
 # ======================
@@ -39,14 +40,10 @@ def root():
     return {"status": "ok"}
 
 # ======================
-# ======================
 # CLIENTS LAYER
 # ======================
-# ======================
-
 @app.get("/clients/resolve")
 def resolve_client(input: str):
-
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/clients",
         headers=HEADERS,
@@ -68,18 +65,16 @@ def resolve_client(input: str):
 
 
 # ======================
-# AUTH BRIDGE (clients → supabase auth)
+# AUTH
 # ======================
 @app.post("/auth/login")
 def login(payload: dict):
-
     input_user = payload.get("user_name")
     password = payload.get("password")
 
     if not input_user or not password:
         return {"ok": False, "error": "MISSING_CREDENTIALS"}
 
-    # 1. resolve client
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/clients",
         headers=HEADERS,
@@ -98,10 +93,8 @@ def login(payload: dict):
         return {"ok": False, "error": "USER_NOT_FOUND"}
 
     client = clients[0]
-
     email = client.get("email")
 
-    # 2. auth supabase (source of truth)
     auth = requests.post(
         f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
         headers={
@@ -115,17 +108,9 @@ def login(payload: dict):
     )
 
     if auth.status_code != 200:
-        return {
-            "ok": False,
-            "error": "AUTH_FAILED",
-            "details": auth.text
-        }
+        return {"ok": False, "error": "AUTH_FAILED", "details": auth.text}
 
-    return {
-        "ok": True,
-        "client": client,
-        "session": auth.json()
-    }
+    return {"ok": True, "client": client, "session": auth.json()}
 
 
 # ======================
@@ -182,100 +167,117 @@ def get_tasks(user_name: str):
 
 
 # ======================
-# FILES TREE (storage local) - VERSÃO CORRIGIDA
+# FILES TREE
 # ======================
 @app.get("/files")
-def list_files(user_name: str = Query("meshwave65")):
-    """
-    Retorna arquivos organizados por provider (grok, chatgpt, manus, etc.)
-    """
-    base_path = "/mnt/hd1tb/projetos/_storage/knowledge"
-    user_path = os.path.join(base_path, "meshwave65", user_name)   # ← Correção importante
+def list_files(
+    user_name: str = Query(...),
+    client_id: str = Query(...)
+):
 
-    if not os.path.exists(user_path):
+    base_path = Path("/mnt/hd1tb/projetos/_storage/knowledge")
+    user_root = base_path / client_id
+
+    if not user_root.exists():
         return {"ok": True, "data": {"providers": []}}
 
     result = {
         "user_name": user_name,
+        "client_id": client_id,
         "providers": []
     }
 
     try:
-        # Itera pelos providers (grok, chatgpt, manus, claude...)
-        for provider in sorted(os.listdir(user_path), reverse=True):
-            provider_path = os.path.join(user_path, provider)
-            if not os.path.isdir(provider_path):
+        for llm_dir in sorted(user_root.iterdir(), reverse=True):
+            if not llm_dir.is_dir():
+                continue
+
+            user_dir = llm_dir / user_name
+            if not user_dir.exists():
                 continue
 
             provider_obj = {
-                "provider": provider,      # ← Agora vai vir "grok", "chatgpt", etc.
+                "provider": llm_dir.name,
                 "tasks": []
             }
 
-            # Itera pelas tasks dentro do provider
-            for task_id in sorted(os.listdir(provider_path), reverse=True):
-                task_path = os.path.join(provider_path, task_id)
-                if not os.path.isdir(task_path):
+            for agent_dir in user_dir.iterdir():
+                if not agent_dir.is_dir():
                     continue
 
-                files = []
-                for root, _, filenames in os.walk(task_path):
-                    for f in sorted(filenames):
-                        full_path = os.path.join(root, f)
-                        files.append({
-                            "filename": f,
-                            "path": full_path
-                        })
+                tasks_root = agent_dir / "tasks"
+                if not tasks_root.exists():
+                    continue
 
-                if files:   # só adiciona se tiver arquivos
-                    provider_obj["tasks"].append({
-                        "task_id": task_id,
-                        "files": files
-                    })
+                for task_dir in sorted(tasks_root.iterdir(), reverse=True):
+                    if not task_dir.is_dir():
+                        continue
+
+                    files = []
+
+                    for root, _, filenames in os.walk(task_dir):
+                        for f in filenames:
+                            files.append({
+                                "filename": f,
+                                "path": os.path.join(root, f)
+                            })
+
+                    if files:
+                        provider_obj["tasks"].append({
+                            "task_id": task_dir.name,
+                            "agent": agent_dir.name,
+                            "files": files
+                        })
 
             if provider_obj["tasks"]:
                 result["providers"].append(provider_obj)
 
     except Exception as e:
-        print(f"Erro ao listar arquivos: {e}")
-        # continua mesmo com erro
+        print(e)
 
     return {"ok": True, "data": result}
 
+
 # ======================
-# SERVE FILE (Preview + Download)
+# FILE SERVE (CORRIGIDO)
 # ======================
 @app.get("/api/file")
 def serve_file(path: str, download: bool = False):
-    try:
-        file_path = Path(path).resolve()                    # resolve caminho absoluto
-        knowledge_root = Path("/mnt/hd1tb/projetos/_storage/knowledge").resolve()
 
-        # Segurança importante
-        if not str(file_path).startswith(str(knowledge_root)):
+    try:
+        file_path = Path(path).resolve()
+        root = Path("/mnt/hd1tb/projetos/_storage/knowledge").resolve()
+
+        if not str(file_path).startswith(str(root)):
             raise HTTPException(status_code=403, detail="Access denied")
 
-        if not file_path.exists() or not file_path.is_file():
-            raise HTTPException(status_code=404, detail="File not found")
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Not found")
 
-        # Define media_type básico
         media_type = "application/octet-stream"
-        if file_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
-            media_type = "image/" + file_path.suffix.lower().lstrip('.')
-        elif file_path.suffix.lower() in ['.txt']:
+
+        if file_path.suffix.lower() in [".png", ".jpg", ".jpeg", ".gif", ".webp"]:
+            media_type = "image/" + file_path.suffix.lower().replace(".", "")
+        elif file_path.suffix.lower() == ".txt":
             media_type = "text/plain"
+        elif file_path.suffix.lower() == ".pdf":
+            media_type = "application/pdf"
 
         if download:
             return FileResponse(
                 path=file_path,
-                filename=file_path.name,
-                media_type=media_type
+                media_type=media_type,
+                filename=file_path.name
             )
 
-        return FileResponse(path=file_path, media_type=media_type)
+        return FileResponse(
+            path=file_path,
+            media_type=media_type
+        )
 
     except HTTPException as e:
         raise e
+
     except Exception as e:
-        print(f"Erro ao servir arquivo {path}: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        print("ERROR:", e)
+        raise HTTPException(status_code=500, detail="internal error")
