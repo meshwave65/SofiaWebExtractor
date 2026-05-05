@@ -39,7 +39,7 @@ function extractSlugFromUrl(url) {
   } catch { return null; }
 }
 
-function extractLLMProvider(url = "") {
+function extractOriginProvider(url = "") {
   if (!url || typeof url !== "string") return "unknown";
   try {
     const host = new URL(url).hostname.toLowerCase();
@@ -208,7 +208,7 @@ function renderTasks() {
       <div class="task-icon" style="text-align:center;">${getStatusIcon(extStatus)}</div>
       <div class="task-content">
         <div class="task-id">${t.id}</div>
-        <div class="task-llm">${t.llm_provider || "unknown"}</div>
+        <div class="task-origin">${t.origin_provider || "unknown"}</div>
         <div class="task-url">${t.full_url}</div>
       </div>
       <div style="display:flex; justify-content:center;"><div class="task-status-btn ${getStatusClass(extStatus)}">${extStatus}</div></div>
@@ -229,7 +229,7 @@ async function insertTask() {
     full_url: url,
     session_user_id: USER.id,
     slug: extractSlugFromUrl(url),
-    llm_provider: extractLLMProvider(url),
+    origin_provider: extractOriginProvider(url),
     status: "STAGED"
   };
   const { error } = await supabase.from("appsofia_tasks").insert([payload]);
